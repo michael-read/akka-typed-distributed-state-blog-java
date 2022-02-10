@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.16.0 (0c01309)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: cassandra-db
+  name: cassandra-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: cassandra-db
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        io.kompose.service: cassandra-db
+    spec:
+      containers:
+      - args:
+        - /bin/bash
+        - -c
+        - sleep 1 && echo ' -- Pausing to let system catch up ... -->' && /docker-entrypoint.sh
+          cassandra -f
+        image: cassandra:3.11.11
+        name: cassandra-db
+        ports:
+        - containerPort: 7000
+        - containerPort: 7001
+        - containerPort: 7199
+        - containerPort: 9042
+        - containerPort: 9160
+        resources: {}
+      hostname: cassandra-1
+      restartPolicy: Always
+status: {}

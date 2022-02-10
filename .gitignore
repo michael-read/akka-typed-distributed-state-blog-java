@@ -1,0 +1,10 @@
+*.class
+.idea
+.bsp
+target/
+project/
+akka-diagnostics/
+logs
+#cassandra volume
+data/cassandra-1/
+lightbend.sbt
