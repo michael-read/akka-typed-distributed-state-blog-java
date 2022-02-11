@@ -4,10 +4,7 @@ import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.persistence.typed.PersistenceId;
-import akka.persistence.typed.javadsl.CommandHandler;
-import akka.persistence.typed.javadsl.Effect;
-import akka.persistence.typed.javadsl.EventHandler;
-import akka.persistence.typed.javadsl.EventSourcedBehavior;
+import akka.persistence.typed.javadsl.*;
 import com.lightbend.artifactstate.serializer.EventSerializeMarker;
 import com.lightbend.artifactstate.serializer.MsgSerializeMarker;
 
@@ -124,10 +121,10 @@ public class ArtifactStateEntityActor
     }
 
     // events
-    public interface ArtifactEvent extends EventSerializeMarker {}
-    public static class ArtifactRead implements ArtifactEvent {}
-    public static class ArtifactAddedToUserFeed implements ArtifactEvent {}
-    public static class ArtifactRemovedFromUserFeed implements ArtifactEvent {}
+    public static class ArtifactEvent implements EventSerializeMarker {}
+    public static class ArtifactRead extends ArtifactEvent {}
+    public static class ArtifactAddedToUserFeed extends ArtifactEvent {}
+    public static class ArtifactRemovedFromUserFeed extends ArtifactEvent {}
 
     public static class CurrState implements MsgSerializeMarker {
         Boolean artifactRead;
@@ -208,8 +205,14 @@ public class ArtifactStateEntityActor
 
     @Override
     public EventHandler<CurrState, ArtifactEvent> eventHandler() {
-        return (state, event) -> {
-            throw new RuntimeException("TODO: process the event return the next state");
-        };
+        EventHandlerBuilder<CurrState, ArtifactEvent> builder = newEventHandlerBuilder();
+        builder.forStateType(CurrState.class)
+                .onEvent(ArtifactRead.class, (state, event) -> new CurrState(true, state.artifactInUserFeed))
+                .onEvent(ArtifactAddedToUserFeed.class, (state, event) -> new CurrState(state.artifactRead, true))
+                .onEvent(ArtifactRemovedFromUserFeed.class, (state, event) -> new CurrState(state.artifactRead, false))
+                .onAnyEvent((state, event) -> {
+                    throw new IllegalStateException(String.format("unexpected event %s in state %s", event.getClass().getName(), state.toString()));
+                });
+        return builder.build();
     }
 }

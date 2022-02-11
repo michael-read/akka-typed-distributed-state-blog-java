@@ -37,7 +37,7 @@ import java.util.concurrent.CompletionStage;
 
 public class StartNode {
 
-    private static Config appConfig = ConfigFactory.load();
+    private static final Config appConfig = ConfigFactory.load();
 
     public static void main(String[] args) {
         String clusterName = appConfig.getString("clustering.cluster.name");
@@ -56,50 +56,63 @@ public class StartNode {
 
     private static Behavior<NotUsed> rootBehavior(int port, int defaultPort) {
         return Behaviors.setup(context -> {
-            akka.actor.ActorSystem classicSystem = context.getSystem().classicSystem();
+            try {
+                akka.actor.ActorSystem classicSystem = context.getSystem().classicSystem();
 
-            EntityTypeKey<ArtifactCommand> typeKey = EntityTypeKey.create(ArtifactCommand.class, ArtifactStateEntityActor.ARTIFACTSTATESHARDNAME);
+                EntityTypeKey<ArtifactCommand> typeKey = EntityTypeKey.create(ArtifactCommand.class, ArtifactStateEntityActor.ARTIFACTSTATESHARDNAME);
 
-            Cluster cluster = Cluster.get(context.getSystem());
-            context.getLog().info(String.format("starting node with roles: %s", cluster.selfMember().getRoles()));
+                Cluster cluster = Cluster.get(context.getSystem());
+                context.getLog().info(String.format("starting node with roles: %s", cluster.selfMember().getRoles()));
 
-            if (cluster.selfMember().hasRole("k8s")) {
-                AkkaManagement.get(classicSystem).start();
-                ClusterBootstrap.get(classicSystem).start();
-            }
-
-            ClusterSharding sharding = ClusterSharding.get(context.getSystem());
-            if (cluster.selfMember().hasRole("sharded")) {
-                sharding.init(Entity.of(typeKey, ctx -> ArtifactStateEntityActor.create(ctx.getEntityId()))
-                        .withSettings(ClusterShardingSettings.create(context.getSystem()).withRole("backend")));
-            }
-            else {
-                if (cluster.selfMember().hasRole("endpoint")) {
-                    ActorRef<ShardingEnvelope<ArtifactCommand>> psCommandActor =
-                            sharding.init(
-                                    Entity.of(typeKey, ctx -> ArtifactStateEntityActor.create(ctx.getEntityId())));
-
-                    Route routes = new ArtifactStateRoutes(context.getSystem(), psCommandActor).psRoutes();
-                    int httpPort = context.getSystem().settings().config().getInt("akka.http.server.default-http-port");
-                    String intf = (cluster.selfMember().hasRole("docker") || cluster.selfMember().hasRole("K8s")) ? "0.0.0.0" : "localhost";
-
-                    Function<HttpRequest, CompletionStage<HttpResponse>> grpcService =
-                            ArtifactStateServiceHandlerFactory.create(new GrpcArtifactStateServiceImpl(context.getSystem(), psCommandActor), classicSystem);
-
-                    // Create gRPC service handler
-                    Route grpcHandlerRoute = handle(grpcService);
-
-                    // As a Route
-                    Route route = concat(routes, grpcHandlerRoute);
-
-                    // Both HTTP and gRPC Binding
-                    CompletionStage<ServerBinding> binding = Http.get(classicSystem).newServerAt(intf, httpPort).bind(route);
-                    binding.thenApply(boundTo -> {
-                        context.getLog().info(String.format("HTTP / gRPC Server online at ip %s:%d", boundTo.localAddress(), httpPort));
-                        return null;
-                    });
+                if (cluster.selfMember().hasRole("k8s")) {
+                    AkkaManagement.get(classicSystem).start();
+                    ClusterBootstrap.get(classicSystem).start();
                 }
 
+                if (cluster.selfMember().hasRole("sharded")) {
+context.getLog().info("starting node as sharded..");
+                    ClusterSharding.get(context.getSystem()).init(
+                            Entity.of(typeKey, ctx -> ArtifactStateEntityActor.create(ctx.getEntityId()))
+                                    .withSettings(ClusterShardingSettings.create(context.getSystem()).withRole("sharded")));
+                } else {
+                    if (cluster.selfMember().hasRole("endpoint")) {
+context.getLog().info("bootstrapping endpoint...");
+                        ActorRef<ShardingEnvelope<ArtifactCommand>> psCommandActor =
+                                ClusterSharding.get(context.getSystem()).init(
+                                        Entity.of(typeKey, ctx -> ArtifactStateEntityActor.create(ctx.getEntityId())));
+
+                        Route routes = new ArtifactStateRoutes(context.getSystem(), psCommandActor).psRoutes();
+                        int httpPort = context.getSystem().settings().config().getInt("akka.http.server.default-http-port");
+                        String intf = (cluster.selfMember().hasRole("docker") || cluster.selfMember().hasRole("K8s")) ? "0.0.0.0" : "localhost";
+context.getLog().info(String.format("starting endpoint on interface %s:%d", intf, httpPort));
+
+                        Function<HttpRequest, CompletionStage<HttpResponse>> grpcService =
+                                ArtifactStateServiceHandlerFactory.createWithServerReflection(new GrpcArtifactStateServiceImpl(context.getSystem(), psCommandActor), classicSystem);
+
+                        // Create gRPC service handler
+                        Route grpcHandlerRoute = handle(grpcService);
+
+                        // As a Route
+                        Route route = concat(routes, grpcHandlerRoute);
+
+                        // Both HTTP and gRPC Binding
+                        CompletionStage<ServerBinding> binding = Http.get(classicSystem).newServerAt(intf, httpPort).bind(route);
+
+                        // Note: use System.out.printf to see the result of the binding
+                        binding.thenApply(boundTo -> {
+                            System.out.printf("HTTP / gRPC Server online at ip %s:%d", boundTo.localAddress(), httpPort);
+                            return null;
+                        }).exceptionally(ex -> {
+                            System.out.printf("HTTP / gRPC Server binding failed at ip %s:%d\", boundTo.localAddress(), httpPort");
+                            System.out.printf("exception:%s", ex.getMessage());
+                            ex.printStackTrace();
+                            return null;
+                        });
+                    }
+                }
+            } catch (Exception ex) {
+                context.getLog().error("an exception occurred while bootstrapping node:", ex.getMessage());
+                ex.printStackTrace();
             }
             return Behaviors.empty();
         });

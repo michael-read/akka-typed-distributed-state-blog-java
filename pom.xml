@@ -23,6 +23,7 @@
         <!-- The Scala versions -->
         <scala.version>2.13.8</scala.version>
         <scala.binary.version>2.13</scala.binary.version>
+        <app.configfile>cluster-application.conf</app.configfile>
     </properties>
 
     <repositories>
@@ -76,6 +77,26 @@
         </dependency>
         <dependency>
             <groupId>com.typesafe.akka</groupId>
+            <artifactId>akka-persistence-cassandra_${scala.binary.version}</artifactId>
+            <version>1.0.5</version>
+        </dependency>
+        <dependency>
+            <groupId>com.typesafe.akka</groupId>
+            <artifactId>akka-persistence_${scala.binary.version}</artifactId>
+            <version>${akka.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.typesafe.akka</groupId>
+            <artifactId>akka-persistence-query_${scala.binary.version}</artifactId>
+            <version>${akka.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.typesafe.akka</groupId>
+            <artifactId>akka-cluster-tools_${scala.binary.version}</artifactId>
+            <version>${akka.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-cluster-sharding-typed_${scala.binary.version}</artifactId>
         </dependency>
         <dependency>
@@ -121,6 +142,16 @@
         <dependency>
             <groupId>com.lightbend.cinnamon</groupId>
             <artifactId>cinnamon-chmetrics</artifactId>
+            <version>${cinnamon.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.lightbend.cinnamon</groupId>
+            <artifactId>cinnamon-chmetrics-elasticsearch-reporter</artifactId>
+            <version>${cinnamon.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.lightbend.cinnamon</groupId>
+            <artifactId>cinnamon-slf4j-events</artifactId>
             <version>${cinnamon.version}</version>
         </dependency>
         <dependency>
@@ -190,37 +221,19 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <executable>maven</executable>
-                    <!-- optional -->
-                    <workingDirectory>/tmp</workingDirectory>
-                    <arguments>
-                        <argument>-classpath</argument>
-                        <classpath/>
-                        <argument>com.lightbend.artifactstate.app.StartNode</argument>
-                        <argument>-javaagent:${project.build.directory}/dependency/cinnamon-agent.jar</argument>
-                    </arguments>
-                    <environmentVariables>
-                        <LANG>en_US</LANG>
-                    </environmentVariables>
-                </configuration>
-            </plugin>
-<!--
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>3.0.0</version>
-                <configuration>
                     <executable>java</executable>
                     <arguments>
                         <argument>-classpath</argument>
+                        <!-- automatically creates the classpath using all project dependencies,
+                             also adding the project build directory -->
                         <classpath/>
-                        <argument>com.lightbend.artifactstate.app.StartNode</argument>
                         <argument>-javaagent:${project.build.directory}/dependency/cinnamon-agent.jar</argument>
-                        <argument>-Dconfig.resource="cluster-application.conf"</argument>
+                        <argument>-Dconfig.resource=${app.configfile}</argument>
+                        <!-- unlike the Telemetry Doc, seem to need to provide the classname here -->
+                        <argument>com.lightbend.artifactstate.app.StartNode</argument>
                     </arguments>
                 </configuration>
             </plugin>
--->
             <plugin>
                 <groupId>com.lightbend.akka.grpc</groupId>
                 <artifactId>akka-grpc-maven-plugin</artifactId>

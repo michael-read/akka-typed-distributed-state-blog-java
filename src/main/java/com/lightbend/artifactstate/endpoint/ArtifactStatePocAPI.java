@@ -1,6 +1,8 @@
 package com.lightbend.artifactstate.endpoint;
 
 import java.util.Optional;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class ArtifactStatePocAPI {
 
@@ -8,7 +10,8 @@ public class ArtifactStatePocAPI {
         Long artifactId;
         String userId;
 
-        public ArtifactAndUser(Long artifactId, String userId) {
+        @JsonCreator
+        public ArtifactAndUser(@JsonProperty("artifactId") Long artifactId, @JsonProperty("userId") String userId) {
             this.artifactId = artifactId;
             this.userId = userId;
         }
@@ -35,13 +38,15 @@ public class ArtifactStatePocAPI {
             this.userId = userId;
         }*/
 
-        public ExtResponse(Long artifactId, String userId, Boolean answer) {
+        @JsonCreator
+        public ExtResponse(@JsonProperty("artifactId") Long artifactId, @JsonProperty("userId") String userId, @JsonProperty("answer") Boolean answer) {
             this.artifactId = artifactId;
             this.userId = userId;
             this.answer = Optional.of(answer);
         }
 
-        public ExtResponse(Long artifactId, String userId, String failureMsg) {
+        @JsonCreator
+        public ExtResponse(@JsonProperty("artifactId") Long artifactId, @JsonProperty("userId") String userId, @JsonProperty("failureMsg") String failureMsg) {
             this.artifactId = artifactId;
             this.userId = userId;
             this.answer = Optional.empty();
@@ -72,15 +77,16 @@ public class ArtifactStatePocAPI {
         Boolean artifactInUserFeed = false;
         Optional<String> failureMsg = Optional.empty();
 
-
-        public AllStatesResponse(Long artifactId, String userId, Boolean artifactRead, Boolean artifactInUserFeed) {
+        @JsonCreator
+        public AllStatesResponse(@JsonProperty("artifactId") Long artifactId, @JsonProperty("userId") String userId, @JsonProperty("artifactRead") Boolean artifactRead, @JsonProperty("artifactInUserFeed") Boolean artifactInUserFeed) {
             this.artifactId = artifactId;
             this.userId = userId;
             this.artifactRead = artifactRead;
             this.artifactInUserFeed = artifactInUserFeed;
         }
 
-        public AllStatesResponse(Long artifactId, String userId, String failureMsg) {
+        @JsonCreator
+        public AllStatesResponse(@JsonProperty("artifactId") Long artifactId, @JsonProperty("userId") String userId, @JsonProperty("failureMsg") String failureMsg) {
             this.artifactId = artifactId;
             this.userId = userId;
             this.failureMsg = Optional.of(failureMsg);
@@ -110,7 +116,8 @@ public class ArtifactStatePocAPI {
     public static class CommandResponse implements ExtResponses {
         Boolean success;
 
-        public CommandResponse(Boolean success) {
+        @JsonCreator
+        public CommandResponse(@JsonProperty("success") Boolean success) {
             this.success = success;
         }
 

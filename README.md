@@ -20,10 +20,14 @@ mvn akka-grpc:generate
 
 ## Running a cluster locally
 
+### Start the ElasticSearch Sandbox
+[Elasticsearch developer sandbox](https://developer.lightbend.com/docs/telemetry/current/sandbox/elastic-sandbox.html#elasticsearch-developer-sandbox)
+
+### Start Cassandra in Docker
 docker-compose -f docker-compose-cassandra.yml up
 
-mvn exec:java -Dexec.mainClass="com.sample.MainClass"  
+### Start a cluster node
+mvn compile exec:exec -Dapp.configfile="cluster-application.conf"
 
-mvn exec:java -Dexec.mainClass="com.lightbend.artifactstate.app.StartNode" -Dconfig.resource="cluster-application.conf"
-
-mvn exec:java -Dexec.mainClass="com.lightbend.artifactstate.app.StartNode" -Dconfig.resource="endpoint-application.conf"
+### Start a endpoint node
+mvn exec:exec -Dapp.configfile="endpoint-application.conf"
