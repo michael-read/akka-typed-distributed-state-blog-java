@@ -67,7 +67,7 @@ class ArtifactStateStream {
                         artifactCommand.setCommand(command);
                         ArtifactCommand data = artifactCommand.build();
                         sent.getAndIncrement();
-                        System.out.printf("transmitting data for user Id %d for UserId:%s ArtifactID:%d", sent.get(), data.getUserId(), data.getArtifactId());
+                        System.out.printf("transmitting data (%d) for UserId:%s ArtifactID:%d\n", sent.get(), data.getUserId(), data.getArtifactId());
                         return data;
                     });
 
@@ -77,11 +77,11 @@ class ArtifactStateStream {
             CompletionStage<Done> done =
                     responseStream.runForeach((reply) -> {
                         received.getAndIncrement();
-                        System.out.printf("received response for (%d): Success %b", received.get(), reply.getSuccess());
+                        System.out.printf("received response for (%d): Success %b\n", received.get(), reply.getSuccess());
                     }, materializer);
 
             done.toCompletableFuture().get(60, TimeUnit.SECONDS);
-            System.out.printf("requests sent %d, replies received %d%n", sent.get(), received.get());
+            System.out.printf("requests sent %d, replies received %d%n\n", sent.get(), received.get());
 
         } catch (StatusRuntimeException e) {
             System.out.println("Status: " + e.getStatus());
