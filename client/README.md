@@ -3,8 +3,27 @@
 We’ve provided two examples for sending sensor data, that read from a file, into the gRPC ingress:
 
 
-- **SensorDataClientForEach** - illustrates a traditional request / response pattern for each *SensorData* sent to the ingress. For each request sent a *SensorDataReply* is returned as a response.
-- **SensorDataClientStream** - illustrates how to stream *SensorData* into the ingress as a stream, while receiving a separate stream of *SensorDataReply* responses.
+- **ArtifactStateForEach** - illustrates a traditional request / response pattern for each *ArtifactAndUser* sent to the ingress. For each request sent a *CommandResponse* is returned as a response.
+- **ArtifactStateStream** - illustrates how to stream *ArtifactCommand* into the ingress as a stream, while receiving a separate stream of *StreamedResponse* responses.
+
+## Running the examples with Maven:
+
+Start by generating code from the .proto definition with:
+
+```
+mvn akka-grpc:generate
+```
+
+Running **ArtifactStateForEach**:
+```
+mvn akka-grpc:generate compile exec:java -Dexec.mainClass=client.artifactstate.ArtifactStateForEach -Dexec.cleanupDaemonThreads=false
+```
+
+Running **ArtifactStateStream**:
+```
+mvn akka-grpc:generate compile exec:java -Dexec.mainClass=client.artifactstate.ArtifactStateStream -Dexec.cleanupDaemonThreads=false
+```
+
 
 ## Running the examples with SBT:
 

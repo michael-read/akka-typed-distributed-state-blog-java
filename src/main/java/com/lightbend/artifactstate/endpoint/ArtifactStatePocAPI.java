@@ -1,6 +1,5 @@
 package com.lightbend.artifactstate.endpoint;
 
-import java.util.Optional;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -30,27 +29,21 @@ public class ArtifactStatePocAPI {
     public static class ExtResponse implements ExtResponses {
         Long artifactId;
         String userId;
-        Optional<Boolean> answer = Optional.empty();
-        Optional<String> failureMsg = Optional.empty();
-
-/*        public ExtResponse(Long artifactId, String userId) {
-            this.artifactId = artifactId;
-            this.userId = userId;
-        }*/
+        Boolean answer = false; // Opational<Boolean> doesn't work properly with JSON marshalling
+        String failureMsg = "";
 
         @JsonCreator
         public ExtResponse(@JsonProperty("artifactId") Long artifactId, @JsonProperty("userId") String userId, @JsonProperty("answer") Boolean answer) {
             this.artifactId = artifactId;
             this.userId = userId;
-            this.answer = Optional.of(answer);
+            this.answer = answer;
         }
 
         @JsonCreator
         public ExtResponse(@JsonProperty("artifactId") Long artifactId, @JsonProperty("userId") String userId, @JsonProperty("failureMsg") String failureMsg) {
             this.artifactId = artifactId;
             this.userId = userId;
-            this.answer = Optional.empty();
-            this.failureMsg = Optional.of(failureMsg);
+            this.failureMsg = failureMsg;
         }
 
         public Long getArtifactId() {
@@ -61,11 +54,11 @@ public class ArtifactStatePocAPI {
             return userId;
         }
 
-        public Optional<Boolean> getAnswer() {
+        public Boolean getAnswer() {
             return answer;
         }
 
-        public Optional<String> getFailureMsg() {
+        public String getFailureMsg() {
             return failureMsg;
         }
     }
@@ -75,7 +68,7 @@ public class ArtifactStatePocAPI {
         String userId;
         Boolean artifactRead = false;
         Boolean artifactInUserFeed = false;
-        Optional<String> failureMsg = Optional.empty();
+        String failureMsg = "";
 
         @JsonCreator
         public AllStatesResponse(@JsonProperty("artifactId") Long artifactId, @JsonProperty("userId") String userId, @JsonProperty("artifactRead") Boolean artifactRead, @JsonProperty("artifactInUserFeed") Boolean artifactInUserFeed) {
@@ -89,7 +82,7 @@ public class ArtifactStatePocAPI {
         public AllStatesResponse(@JsonProperty("artifactId") Long artifactId, @JsonProperty("userId") String userId, @JsonProperty("failureMsg") String failureMsg) {
             this.artifactId = artifactId;
             this.userId = userId;
-            this.failureMsg = Optional.of(failureMsg);
+            this.failureMsg = failureMsg;
         }
 
         public Long getArtifactId() {
@@ -108,7 +101,7 @@ public class ArtifactStatePocAPI {
             return artifactInUserFeed;
         }
 
-        public Optional<String> getFailureMsg() {
+        public String getFailureMsg() {
             return failureMsg;
         }
     }

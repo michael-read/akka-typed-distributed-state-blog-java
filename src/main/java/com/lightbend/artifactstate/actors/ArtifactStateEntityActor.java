@@ -5,8 +5,13 @@ import akka.actor.typed.Behavior;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.persistence.typed.PersistenceId;
 import akka.persistence.typed.javadsl.*;
+
 import com.lightbend.artifactstate.serializer.EventSerializeMarker;
 import com.lightbend.artifactstate.serializer.MsgSerializeMarker;
+
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class ArtifactStateEntityActor
         extends EventSourcedBehavior<ArtifactStateEntityActor.ArtifactCommand, ArtifactStateEntityActor.ArtifactEvent, ArtifactStateEntityActor.CurrState> {
@@ -23,7 +28,8 @@ public class ArtifactStateEntityActor
         public final Long artifactId;
         public final String userId;
 
-        public IsArtifactReadByUser(ActorRef<ArtifactReadByUser> replyTo, Long artifactId, String userId) {
+        @JsonCreator
+        public IsArtifactReadByUser(@JsonProperty("replyTo") ActorRef<ArtifactReadByUser> replyTo, @JsonProperty("artifactId") Long artifactId, @JsonProperty("userId") String userId) {
             this.replyTo = replyTo;
             this.artifactId = artifactId;
             this.userId = userId;
@@ -35,7 +41,8 @@ public class ArtifactStateEntityActor
         public final Long artifactId;
         public final String userId;
 
-        public IsArtifactInUserFeed(ActorRef<ArtifactInUserFeed> replyTo, Long artifactId, String userId) {
+        @JsonCreator
+        public IsArtifactInUserFeed(@JsonProperty("replyTo") ActorRef<ArtifactInUserFeed> replyTo, @JsonProperty("artifactId") Long artifactId, @JsonProperty("userId") String userId) {
             this.replyTo = replyTo;
             this.artifactId = artifactId;
             this.userId = userId;
@@ -47,7 +54,8 @@ public class ArtifactStateEntityActor
         public final Long artifactId;
         public final String userId;
 
-        public GetAllStates(ActorRef<AllStates> replyTo, Long artifactId, String userId) {
+        @JsonCreator
+        public GetAllStates(@JsonProperty("replyTo") ActorRef<AllStates> replyTo, @JsonProperty("artifactId") Long artifactId, @JsonProperty("userId") String userId) {
             this.replyTo = replyTo;
             this.artifactId = artifactId;
             this.userId = userId;
@@ -60,7 +68,8 @@ public class ArtifactStateEntityActor
         public final Long artifactId;
         public final String userId;
 
-        public SetArtifactRead(ActorRef<Okay> replyTo, Long artifactId, String userId) {
+        @JsonCreator
+        public SetArtifactRead(@JsonProperty("replyTo") ActorRef<Okay> replyTo, @JsonProperty("artifactId") Long artifactId, @JsonProperty("userId") String userId) {
             this.replyTo = replyTo;
             this.artifactId = artifactId;
             this.userId = userId;
@@ -72,7 +81,8 @@ public class ArtifactStateEntityActor
         public final Long artifactId;
         public final String userId;
 
-        public SetArtifactAddedToUserFeed(ActorRef<Okay> replyTo, Long artifactId, String userId) {
+        @JsonCreator
+        public SetArtifactAddedToUserFeed(@JsonProperty("replyTo") ActorRef<Okay> replyTo, @JsonProperty("artifactId") Long artifactId, @JsonProperty("userId") String userId) {
             this.replyTo = replyTo;
             this.artifactId = artifactId;
             this.userId = userId;
@@ -84,7 +94,8 @@ public class ArtifactStateEntityActor
         public final Long artifactId;
         public final String userId;
 
-        public SetArtifactRemovedFromUserFeed(ActorRef<Okay> replyTo, Long artifactId, String userId) {
+        @JsonCreator
+        public SetArtifactRemovedFromUserFeed(@JsonProperty("replyTo") ActorRef<Okay> replyTo, @JsonProperty("artifactId") Long artifactId, @JsonProperty("userId") String userId) {
             this.replyTo = replyTo;
             this.artifactId = artifactId;
             this.userId = userId;
@@ -92,12 +103,14 @@ public class ArtifactStateEntityActor
     }
 
     // responses
+    @JsonSerialize
     public static class Okay implements ArtifactResponse {}
 
     public static class ArtifactReadByUser implements ArtifactResponse {
         public final Boolean artifactRead;
 
-        public ArtifactReadByUser(Boolean artifactRead) {
+        @JsonCreator
+        public ArtifactReadByUser(@JsonProperty("artifactRead")  Boolean artifactRead) {
             this.artifactRead = artifactRead;
         }
     }
@@ -105,7 +118,8 @@ public class ArtifactStateEntityActor
     public static class ArtifactInUserFeed implements ArtifactResponse {
         public final Boolean artifactInUserFeed;
 
-        public ArtifactInUserFeed(Boolean artifactInUserFeed) {
+        @JsonCreator
+        public ArtifactInUserFeed(@JsonProperty("artifactRead") Boolean artifactInUserFeed) {
             this.artifactInUserFeed = artifactInUserFeed;
         }
     }
@@ -114,7 +128,8 @@ public class ArtifactStateEntityActor
         public final Boolean artifactRead;
         public final Boolean artifactInUserFeed;
 
-        public AllStates(Boolean artifactRead, Boolean artifactInUserFeed) {
+        @JsonCreator
+        public AllStates(@JsonProperty("artifactRead") Boolean artifactRead, @JsonProperty("artifactInUserFeed") Boolean artifactInUserFeed) {
             this.artifactRead = artifactRead;
             this.artifactInUserFeed = artifactInUserFeed;
         }
@@ -122,8 +137,11 @@ public class ArtifactStateEntityActor
 
     // events
     public static class ArtifactEvent implements EventSerializeMarker {}
+    @JsonSerialize
     public static class ArtifactRead extends ArtifactEvent {}
+    @JsonSerialize
     public static class ArtifactAddedToUserFeed extends ArtifactEvent {}
+    @JsonSerialize
     public static class ArtifactRemovedFromUserFeed extends ArtifactEvent {}
 
     public static class CurrState implements MsgSerializeMarker {

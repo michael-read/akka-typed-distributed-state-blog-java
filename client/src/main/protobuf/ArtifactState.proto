@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option java_package = "com.lightbend.artifactstate.endpoint";
+option java_package = "client.artifactstate";
 option java_outer_classname = "ArtifactStateProto";
 
 // The ArtifactStateService service definition.

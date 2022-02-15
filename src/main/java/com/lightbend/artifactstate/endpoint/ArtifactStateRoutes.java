@@ -37,10 +37,12 @@ public class ArtifactStateRoutes {
                         timeout,
                         system.scheduler());
         return result.thenApply(reply -> {
-            if (reply != null)
+            if (reply != null) {
                 return new ExtResponse(artifactId, userId, reply.artifactRead);
-            else
+            }
+            else {
                 return new ExtResponse(artifactId, userId, String.format("Artifact query not found for artifactId %d, userId %s", artifactId, userId));
+            }
         }).exceptionally(throwable -> new ExtResponse(artifactId, userId, String.format("Artifact query failed for artifactId %d, userId %s : %s", artifactId, userId, throwable.getMessage())));
     }
 
