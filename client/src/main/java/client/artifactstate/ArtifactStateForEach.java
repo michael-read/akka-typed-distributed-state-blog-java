@@ -30,7 +30,7 @@ class ArtifactStateForEach {
     }
 
     CompletableFuture<CommandResponse> singleRequestReply(ArtifactStateServiceClient client, ArtifactAndUser data, int cnt, String command) {
-        System.out.printf("transmitting data for user Id %d for UserId:%s ArtifactID:%d", cnt, data.getUserId(), data.getArtifactId());
+        System.out.printf("transmitting data for (%d) for UserId:%s ArtifactID:%d\n", cnt, data.getUserId(), data.getArtifactId());
         CompletionStage<CommandResponse> reply = null;
         switch(command) {
             case "SetArtifactReadByUser":
@@ -41,9 +41,9 @@ class ArtifactStateForEach {
                 client.setArtifactRemovedFromUserFeed(data);
         }
         if (reply != null) {
-            reply.thenAccept(msg -> System.out.printf("received response for (%d): Success %b", cnt, msg.getSuccess()))
+            reply.thenAccept(msg -> System.out.printf("received response for (%d): Success %b\n", cnt, msg.getSuccess()))
                     .exceptionally(ex -> {
-                        System.out.printf("Something went wrong, Error (%d): %s%n", cnt, ex.getMessage());
+                        System.out.printf("Something went wrong, Error (%d): %s%n\n", cnt, ex.getMessage());
                         return null;
                     });
         }
