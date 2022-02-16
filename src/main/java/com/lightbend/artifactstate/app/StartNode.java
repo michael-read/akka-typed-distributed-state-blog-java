@@ -57,16 +57,14 @@ public class StartNode {
     private static Behavior<NotUsed> rootBehavior(int port, int defaultPort) {
         return Behaviors.setup(context -> {
             try {
-                akka.actor.ActorSystem classicSystem = context.getSystem().classicSystem();
-
                 EntityTypeKey<ArtifactCommand> typeKey = EntityTypeKey.create(ArtifactCommand.class, ArtifactStateEntityActor.ARTIFACTSTATESHARDNAME);
 
                 Cluster cluster = Cluster.get(context.getSystem());
                 context.getLog().info(String.format("starting node with roles: %s", cluster.selfMember().getRoles()));
 
                 if (cluster.selfMember().hasRole("k8s")) {
-                    AkkaManagement.get(classicSystem).start();
-                    ClusterBootstrap.get(classicSystem).start();
+                    AkkaManagement.get(context.getSystem()).start();
+                    ClusterBootstrap.get(context.getSystem()).start();
                 }
 
                 if (cluster.selfMember().hasRole("sharded")) {
@@ -87,7 +85,7 @@ context.getLog().info("bootstrapping endpoint...");
 context.getLog().info(String.format("starting endpoint on interface %s:%d", intf, httpPort));
 
                         Function<HttpRequest, CompletionStage<HttpResponse>> grpcService =
-                                ArtifactStateServiceHandlerFactory.createWithServerReflection(new GrpcArtifactStateServiceImpl(context.getSystem(), psCommandActor), classicSystem);
+                                ArtifactStateServiceHandlerFactory.createWithServerReflection(new GrpcArtifactStateServiceImpl(context.getSystem(), psCommandActor), context.getSystem());
 
                         // Create gRPC service handler
                         Route grpcHandlerRoute = handle(grpcService);
@@ -96,7 +94,7 @@ context.getLog().info(String.format("starting endpoint on interface %s:%d", intf
                         Route route = concat(routes, grpcHandlerRoute);
 
                         // Both HTTP and gRPC Binding
-                        CompletionStage<ServerBinding> binding = Http.get(classicSystem).newServerAt(intf, httpPort).bind(route);
+                        CompletionStage<ServerBinding> binding = Http.get(context.getSystem()).newServerAt(intf, httpPort).bind(route);
 
                         // Note: use System.out.printf to see the result of the binding
                         binding.thenApply(boundTo -> {
