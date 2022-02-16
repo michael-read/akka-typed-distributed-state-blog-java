@@ -132,10 +132,33 @@
             <artifactId>akka-grpc-runtime_${scala.binary.version}</artifactId>
             <version>${akka.grpc.version}</version>
         </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>1.2.3</version>
+        </dependency>
         <!-- Add Lightbend Telemetry (Cinnamon) dependencies -->
         <dependency>
             <groupId>com.lightbend.cinnamon</groupId>
             <artifactId>cinnamon-akka_${scala.binary.version}</artifactId>
+            <version>${cinnamon.version}</version>
+        </dependency>
+        <!-- Use Akka HTTP instrumentation -->
+        <dependency>
+            <groupId>com.lightbend.cinnamon</groupId>
+            <artifactId>cinnamon-akka-http_${scala.binary.version}</artifactId>
+            <version>${cinnamon.version}</version>
+        </dependency>
+        <!-- Use Akka gRPC instrumentation -->
+        <dependency>
+            <groupId>com.lightbend.cinnamon</groupId>
+            <artifactId>cinnamon-akka-grpc_${scala.binary.version}</artifactId>
+            <version>${cinnamon.version}</version>
+        </dependency>
+        <!-- Use Akka Persistence instrumentation -->
+        <dependency>
+            <groupId>com.lightbend.cinnamon</groupId>
+            <artifactId>cinnamon-akka-persistence_${scala.binary.version}</artifactId>
             <version>${cinnamon.version}</version>
         </dependency>
         <!-- Use Coda Hale Metrics and Akka instrumentation -->
@@ -154,11 +177,19 @@
             <artifactId>cinnamon-slf4j-events</artifactId>
             <version>${cinnamon.version}</version>
         </dependency>
+        <!-- Prometheus Cinnamon Dependencies -->
         <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <version>1.2.3</version>
+            <groupId>com.lightbend.cinnamon</groupId>
+            <artifactId>cinnamon-prometheus</artifactId>
+            <version>${cinnamon.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.lightbend.cinnamon</groupId>
+            <artifactId>cinnamon-prometheus-httpserver</artifactId>
+            <version>${cinnamon.version}</version>
+        </dependency>
+
+
         <dependency>
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-actor-testkit-typed_${scala.binary.version}</artifactId>
@@ -170,6 +201,12 @@
             <artifactId>junit</artifactId>
             <version>4.13.1</version>
             <scope>test</scope>
+        </dependency>
+        <!-- This is dependency to use for Akka Persistence with Yugabyte  -->
+        <dependency>
+            <groupId>com.lightbend.akka</groupId>
+            <artifactId>akka-persistence-r2dbc_${scala.binary.version}</artifactId>
+            <version>0.5.0</version>
         </dependency>
     </dependencies>
 
