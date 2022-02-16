@@ -9,16 +9,17 @@ In this four part blog series, we walk you through a working Proof of Concept (P
 - [Part 4](https://www.lightbend.com/blog/how-to-distribute-application-state-with-akka-cluster-part-4-the-source-code) - Source Code: In our final installment, we do a deep dive into our Scala source code.
  	
 ----------------
-## Update Feb 9, 2022
-- Start the process to convert all Scala to Java
-
+## Update Feb 15, 2022
+- This repository is the Java version of the original Scala version.
+- Testing [Lightbend's Akka Persistence Plugin for R2DBC](https://github.com/akka/akka-persistence-r2dbc).
+- TODO: In the process of building, multi-node tests, docker, and K8s examples for Yugabyte
 
 ## How to Generate Protobuf interfaces and stubs
 ```
-mvn akka-grpc:generate
+mvn clean akka-grpc:generate
 ```
 
-## Running a cluster locally
+## Running a cluster locally with Cassandra
 
 ### Start the ElasticSearch Sandbox
 [Elasticsearch developer sandbox](https://developer.lightbend.com/docs/telemetry/current/sandbox/elastic-sandbox.html#elasticsearch-developer-sandbox)
@@ -28,6 +29,23 @@ docker-compose -f docker-compose-cassandra.yml up
 
 ### Start a cluster node
 mvn compile exec:exec -Dapp.configfile="cluster-application.conf"
+
+### Start a endpoint node
+mvn exec:exec -Dapp.configfile="endpoint-application.conf"
+
+## Running a cluster locally with Yugabyte
+
+### Start the ElasticSearch Sandbox
+[Elasticsearch developer sandbox](https://developer.lightbend.com/docs/telemetry/current/sandbox/elastic-sandbox.html#elasticsearch-developer-sandbox)
+
+### Start Yugabyte in Docker
+docker-compose -f docker-compose-yugabyte.yml up
+
+### First time, create the tables
+docker exec -i yb-tserver-n1 /home/yugabyte/bin/ysqlsh -h yb-tserver-n1 -t < https://raw.githubusercontent.com/akka/akka-persistence-r2dbc/main/ddl-scripts/create_tables_yugabyte.sql
+
+### Start a cluster node
+mvn compile exec:exec -Dapp.configfile="cluster-application-yugabyte.conf"
 
 ### Start a endpoint node
 mvn exec:exec -Dapp.configfile="endpoint-application.conf"
