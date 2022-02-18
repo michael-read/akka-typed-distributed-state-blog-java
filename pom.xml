@@ -137,6 +137,14 @@
             <artifactId>logback-classic</artifactId>
             <version>1.2.3</version>
         </dependency>
+
+        <!-- This is dependency to use for Akka Persistence with Yugabyte  -->
+        <dependency>
+            <groupId>com.lightbend.akka</groupId>
+            <artifactId>akka-persistence-r2dbc_${scala.binary.version}</artifactId>
+            <version>0.5.0</version>
+        </dependency>
+
         <!-- Add Lightbend Telemetry (Cinnamon) dependencies -->
         <dependency>
             <groupId>com.lightbend.cinnamon</groupId>
@@ -189,7 +197,7 @@
             <version>${cinnamon.version}</version>
         </dependency>
 
-
+        <!-- Test Scope -->
         <dependency>
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-actor-testkit-typed_${scala.binary.version}</artifactId>
@@ -201,12 +209,6 @@
             <artifactId>junit</artifactId>
             <version>4.13.1</version>
             <scope>test</scope>
-        </dependency>
-        <!-- This is dependency to use for Akka Persistence with Yugabyte  -->
-        <dependency>
-            <groupId>com.lightbend.akka</groupId>
-            <artifactId>akka-persistence-r2dbc_${scala.binary.version}</artifactId>
-            <version>0.5.0</version>
         </dependency>
     </dependencies>
 
