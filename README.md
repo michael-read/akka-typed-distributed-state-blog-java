@@ -10,7 +10,7 @@ In this four part blog series, we walk you through a working Proof of Concept (P
  	
 ----------------
 ## Update Feb 15, 2022
-- This repository is the Java version of the original Scala version.
+- This repository is the Java version of the original Scala version found [here](https://github.com/michael-read/akka-typed-distributed-state-blog).
 - Testing [Lightbend's Akka Persistence Plugin for R2DBC](https://github.com/akka/akka-persistence-r2dbc).
 - TODO: In the process of building, multi-node tests, docker, and K8s examples for Yugabyte
 
