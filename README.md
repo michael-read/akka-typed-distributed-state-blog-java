@@ -68,5 +68,5 @@ mvn exec:exec -Dapp.configfile="endpoint-application.conf"
 1. Start Cassandra first (above)
 2. Start the test
 ````
-mvn test -Dtest=MultiNodeIntegrationSpec
+mvn test
  ````
