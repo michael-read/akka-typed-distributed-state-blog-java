@@ -25,13 +25,19 @@ mvn clean akka-grpc:generate
 [Elasticsearch developer sandbox](https://developer.lightbend.com/docs/telemetry/current/sandbox/elastic-sandbox.html#elasticsearch-developer-sandbox)
 
 ### Start Cassandra in Docker
+````
 docker-compose -f docker-compose-cassandra.yml up
+````
 
 ### Start a cluster node
+````
 mvn compile exec:exec -Dapp.configfile="cluster-application.conf"
+````
 
 ### Start a endpoint node
+````
 mvn exec:exec -Dapp.configfile="endpoint-application.conf"
+````
 
 ## Running a cluster locally with Yugabyte
 
@@ -39,13 +45,28 @@ mvn exec:exec -Dapp.configfile="endpoint-application.conf"
 [Elasticsearch developer sandbox](https://developer.lightbend.com/docs/telemetry/current/sandbox/elastic-sandbox.html#elasticsearch-developer-sandbox)
 
 ### Start Yugabyte in Docker
+````
 docker-compose -f docker-compose-yugabyte.yml up
+````
 
 ### First time, create the tables
+````
 docker exec -i yb-tserver-n1 /home/yugabyte/bin/ysqlsh -h yb-tserver-n1 -t < https://raw.githubusercontent.com/akka/akka-persistence-r2dbc/main/ddl-scripts/create_tables_yugabyte.sql
+````
 
 ### Start a cluster node
+````
 mvn compile exec:exec -Dapp.configfile="cluster-application-yugabyte.conf"
+````
 
 ### Start a endpoint node
+````
 mvn exec:exec -Dapp.configfile="endpoint-application.conf"
+````
+
+## Running Multi-Node Tests
+1. Start Cassandra first (above)
+2. Start the test
+````
+mvn test -Dtest=MultiNodeIntegrationSpec
+ ````

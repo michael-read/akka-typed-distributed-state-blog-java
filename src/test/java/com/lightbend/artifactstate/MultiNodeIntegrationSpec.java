@@ -47,29 +47,48 @@ public class MultiNodeIntegrationSpec {
                 "akka.cluster {"
                         + "\n"
                         + "roles=[\"sharded\", \"k8s\"]"
-                        + "\n"
-                        + "shutdown-after-unsuccessful-join-seed-nodes = 30s"
                 + "\n"
                 + "}"
-        );
-    }
-
-    private static Config clusterBootstrapConfig(List<Integer> managementPorts, int managementPortIndex) {
-        return ConfigFactory.parseString(
-                "akka.management.http.port = "
-                    + managementPorts.get(managementPortIndex)
+                + "\n"
+                + "akka.persistence {"
                     + "\n"
-                    + "akka.discovery.config.services.ArtifactStateCluster.endpoints = [\n"
-                        + "  { host = \"127.0.0.1\", port = "
-                        + managementPorts.get(0)
-                        + "},\n"
-                        + "  { host = \"127.0.0.1\", port = "
-                        + managementPorts.get(1)
-                        + "},\n"
-                        + "  { host = \"127.0.0.1\", port = "
-                        + managementPorts.get(2)
-                        + "},\n"
-                    + "]"
+                    + "journal.plugin = \"akka.persistence.cassandra.journal\""
+                    + "\n"
+                    + "snapshot-store.plugin = \"akka.persistence.cassandra.snapshot\""
+                    + "\n"
+                + "}"
+                + "\n"
+//              # NOTE: autocreation of journal and snapshot should not be used in production
+                + "akka.persistence.cassandra {"
+                    + "\n"
+                    + "journal {"
+                        + "\n"
+                        + "keyspace-autocreate = true"
+                        + "\n"
+                        + "tables-autocreate = true"
+                        + "\n"
+                    + "}"
+                    + "\n"
+                    + "snapshot {"
+                        + "\n"
+                        + "keyspace-autocreate = true"
+                        + "\n"
+                        + "tables-autocreate = true"
+                        + "\n"
+                    + "}"
+                    + "\n"
+                + "}"
+                + "\n"
+                + "datastax-java-driver {"
+                    + "\n"
+                    + "advanced.reconnect-on-init = true"
+                    + "\n"
+                    + "basic.contact-points = [\"127.0.0.1:9042\"]"
+                    + "\n"
+                    + "basic.load-balancing-policy.local-datacenter = \"datacenter1\""
+                    + "\n"
+                + "}"
+                + "\n"
         );
     }
 
@@ -83,13 +102,32 @@ public class MultiNodeIntegrationSpec {
             + "akka.cluster {"
                     + "\n"
                     + "roles=[\"endpoint\", \"k8s\"]"
-                    + "\n"
-                    + "shutdown-after-unsuccessful-join-seed-nodes = 30s"
             + "\n"
             + "}"
         );
     }
 
+    private static Config clusterBootstrapConfig(List<Integer> managementPorts, int managementPortIndex) {
+        return ConfigFactory.parseString(
+                "akka.management.http.hostname = 127.0.0.1"
+                        + "\n"
+                        + "akka.management.http.port = "
+                        + managementPorts.get(managementPortIndex)
+                        + "\n"
+                        + "akka.discovery.config.services.ArtifactStateCluster.endpoints = [\n"
+                        + "  { host = \"127.0.0.1\", port = "
+                        + managementPorts.get(0)
+                        + "},\n"
+                        + "  { host = \"127.0.0.1\", port = "
+                        + managementPorts.get(1)
+                        + "},\n"
+                        + "  { host = \"127.0.0.1\", port = "
+                        + managementPorts.get(2)
+                        + "},\n"
+                        + "]"
+        );
+    }
+    
     private static TestNodeFixture testNode1;
     private static TestNodeFixture testNode2;
     private static TestEndpointFixture endpointNode3;
@@ -98,6 +136,7 @@ public class MultiNodeIntegrationSpec {
 
     @BeforeClass
     public static void setup() throws Exception {
+        logger.info("setup started...");
         List<InetSocketAddress> inetSocketAddresses =
                 CollectionConverters.SeqHasAsJava(
                                 SocketUtil.temporaryServerAddresses(6, "127.0.0.1", false))
@@ -108,15 +147,13 @@ public class MultiNodeIntegrationSpec {
                 inetSocketAddresses.subList(0, 3).stream()
                         .map(InetSocketAddress::getPort)
                         .collect(Collectors.toList());*/
-/*
         List<Integer> managementPorts =
                 inetSocketAddresses.subList(3, 6).stream()
                         .map(InetSocketAddress::getPort)
                         .collect(Collectors.toList());
-*/
-        List<Integer> managementPorts = Arrays.asList(8558,8559,8560);
+//        List<Integer> managementPorts = Arrays.asList(8558,8559,8560);
 
-        System.out.println("management ports:" + managementPorts.toString());
+        logger.info("management ports:" + managementPorts.toString());
 
         testNode1 = new TestNodeFixture(managementPorts, 0);
         testNode2 = new TestNodeFixture(managementPorts, 1);
@@ -144,18 +181,19 @@ public class MultiNodeIntegrationSpec {
                                 return null;
                             });
                 });
-
+        logger.info("setup completed...");
     }
 
     @AfterClass
     public static void tearDown() {
+        logger.info("tearDown started...");
         endpointNode3.testKit.shutdownTestKit();
         testNode2.testKit.shutdownTestKit();
         testNode1.testKit.shutdownTestKit();
+        logger.info("tearDown completed...");
     }
 
     private static class TestNodeFixture {
-
         private final ActorTestKit testKit;
         private final ActorSystem<?> system;
 
@@ -207,6 +245,8 @@ public class MultiNodeIntegrationSpec {
     // the following test leverage protobuf / grpcService
     @Test
     public void testAllViaGrpc() throws Exception {
+        logger.info("testAllViaGrpc started...");
+
         ArtifactAndUser michael1 = ArtifactAndUser.newBuilder()
                 .setUserId("Michael")
                 .setArtifactId(1)
@@ -231,5 +271,7 @@ public class MultiNodeIntegrationSpec {
         assertEquals(extResponse.getUserId(), michael1.getUserId());
         assertEquals(extResponse.getArtifactId(), michael1.getArtifactId());
         assertTrue(extResponse.getAnswer());
+
+        logger.info("testAllViaGrpc completed...");
     }
 }
