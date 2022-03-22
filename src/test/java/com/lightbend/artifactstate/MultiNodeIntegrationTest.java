@@ -7,36 +7,37 @@ import akka.actor.typed.ActorSystem;
 import akka.cluster.MemberStatus;
 import akka.cluster.typed.Cluster;
 import akka.grpc.GrpcClientSettings;
+import akka.http.javadsl.Http;
 import akka.testkit.SocketUtil;
 import com.lightbend.artifactstate.app.StartNode;
+import com.lightbend.artifactstate.endpoint.ArtifactStateProto;
 import com.lightbend.artifactstate.endpoint.ArtifactStateProto.CommandResponse;
 import com.lightbend.artifactstate.endpoint.ArtifactStateProto.ArtifactAndUser;
 import com.lightbend.artifactstate.endpoint.ArtifactStateProto.ExtResponse;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.lightbend.artifactstate.endpoint.ArtifactStateServiceClient;
 import scala.jdk.CollectionConverters;
 
 import java.net.InetSocketAddress;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
-public class MultiNodeIntegrationSpec {
-    private static final Logger logger = LoggerFactory.getLogger(MultiNodeIntegrationSpec.class);
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class MultiNodeIntegrationTest {
+    private static final Logger logger = LoggerFactory.getLogger(MultiNodeIntegrationTest.class);
 
     private static Config sharedConfig() {
         return ConfigFactory.load("multinode-test-cassandra.conf");
@@ -137,21 +138,18 @@ public class MultiNodeIntegrationSpec {
     @BeforeClass
     public static void setup() throws Exception {
         logger.info("setup started...");
+
+        // grab six temporary ports
         List<InetSocketAddress> inetSocketAddresses =
                 CollectionConverters.SeqHasAsJava(
                                 SocketUtil.temporaryServerAddresses(6, "127.0.0.1", false))
                         .asJava();
 
-        // we're really only using the gRPC port on the endpoint.
-/*        List<Integer> grpcPorts =
-                inetSocketAddresses.subList(0, 3).stream()
-                        .map(InetSocketAddress::getPort)
-                        .collect(Collectors.toList());*/
+        // setup unique management ports
         List<Integer> managementPorts =
                 inetSocketAddresses.subList(3, 6).stream()
                         .map(InetSocketAddress::getPort)
                         .collect(Collectors.toList());
-//        List<Integer> managementPorts = Arrays.asList(8558,8559,8560);
 
         logger.info("management ports:" + managementPorts.toString());
 
@@ -229,7 +227,7 @@ public class MultiNodeIntegrationSpec {
                     GrpcClientSettings.connectToServiceAt("127.0.0.1", grcpPort, system).withTls(false);
         }
 
-        public ArtifactStateServiceClient getClient() {
+        public ArtifactStateServiceClient getGrpcClient() {
             if (client == null) {
                 client = ArtifactStateServiceClient.create(clientSettings, system);
                 CoordinatedShutdown.get(system)
@@ -255,23 +253,99 @@ public class MultiNodeIntegrationSpec {
         // setArtifactReadByUser
         CompletionStage<CommandResponse> response1 =
                 endpointNode3
-                        .getClient()
+                        .getGrpcClient()
                         .setArtifactReadByUser()
                         .invoke(michael1);
-        CommandResponse commandResponse = response1.toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
-        assertTrue(commandResponse.getSuccess());
+        CommandResponse commandResponse1 = response1.toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
+        assertTrue(commandResponse1.getSuccess());
 
         // isArtifactReadByUser
         CompletionStage<ExtResponse> response2 =
                 endpointNode3
-                        .getClient()
+                        .getGrpcClient()
                         .isArtifactReadByUser()
                         .invoke(michael1);
-        ExtResponse extResponse = response2.toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
-        assertEquals(extResponse.getUserId(), michael1.getUserId());
-        assertEquals(extResponse.getArtifactId(), michael1.getArtifactId());
-        assertTrue(extResponse.getAnswer());
+        ExtResponse extResponse1 = response2.toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
+        assertEquals(extResponse1.getUserId(), michael1.getUserId());
+        assertEquals(extResponse1.getArtifactId(), michael1.getArtifactId());
+        assertTrue(extResponse1.getAnswer());
+
+        // setArtifactAddedToUserFeed
+        CompletionStage<CommandResponse> response3 =
+                endpointNode3
+                        .getGrpcClient()
+                        .setArtifactAddedToUserFeed()
+                        .invoke(michael1);
+        CommandResponse commandResponse2 = response3.toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
+        assertTrue(commandResponse2.getSuccess());
+
+        // isArtifactInUserFeed
+        CompletionStage<ExtResponse> response4 =
+                endpointNode3
+                        .getGrpcClient()
+                        .isArtifactInUserFeed()
+                        .invoke(michael1);
+        ExtResponse extResponse2 = response4.toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
+        assertEquals(extResponse2.getUserId(), michael1.getUserId());
+        assertEquals(extResponse2.getArtifactId(), michael1.getArtifactId());
+        assertTrue(extResponse2.getAnswer());
+
+        // setArtifactAddedToUserFeed
+        CompletionStage<CommandResponse> response5 =
+                endpointNode3
+                        .getGrpcClient()
+                        .setArtifactAddedToUserFeed()
+                        .invoke(michael1);
+        CommandResponse commandResponse3 = response5.toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
+        assertTrue(commandResponse3.getSuccess());
+
+        // isArtifactInUserFeed
+        CompletionStage<ExtResponse> response6 =
+                endpointNode3
+                        .getGrpcClient()
+                        .isArtifactInUserFeed()
+                        .invoke(michael1);
+        ExtResponse extResponse3 = response6.toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
+        assertEquals(extResponse3.getUserId(), michael1.getUserId());
+        assertEquals(extResponse3.getArtifactId(), michael1.getArtifactId());
+        assertTrue(extResponse3.getAnswer());
+
+        // setArtifactRemovedFromUserFeed
+        CompletionStage<CommandResponse> response7 =
+                endpointNode3
+                        .getGrpcClient()
+                        .setArtifactRemovedFromUserFeed()
+                        .invoke(michael1);
+        CommandResponse commandResponse4 = response7.toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
+        assertTrue(commandResponse4.getSuccess());
+
+        // isArtifactInUserFeed
+        CompletionStage<ExtResponse> response8 =
+                endpointNode3
+                        .getGrpcClient()
+                        .isArtifactInUserFeed()
+                        .invoke(michael1);
+        ExtResponse extResponse4 = response8.toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
+        assertEquals(extResponse4.getUserId(), michael1.getUserId());
+        assertEquals(extResponse4.getArtifactId(), michael1.getArtifactId());
+        assertFalse(extResponse4.getAnswer());
+
+        CompletionStage<ArtifactStateProto.AllStatesResponse> response9 =
+                endpointNode3
+                        .getGrpcClient()
+                        .getAllStates()
+                        .invoke(michael1);
+        ArtifactStateProto.AllStatesResponse state = response9.toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
+        assertEquals(state.getUserId(), michael1.getUserId());
+        assertEquals(state.getArtifactId(), michael1.getArtifactId());
+        assertTrue(state.getArtifactRead());
+        assertFalse(state.getArtifactInUserFeed());
 
         logger.info("testAllViaGrpc completed...");
+    }
+
+    @Test
+    public void testAllViaHttp() throws Exception {
+
     }
 }
