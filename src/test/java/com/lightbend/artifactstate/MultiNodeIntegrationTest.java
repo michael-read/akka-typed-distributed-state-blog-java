@@ -8,16 +8,27 @@ import akka.cluster.MemberStatus;
 import akka.cluster.typed.Cluster;
 import akka.grpc.GrpcClientSettings;
 import akka.http.javadsl.Http;
+import akka.http.javadsl.marshallers.jackson.Jackson;
+import akka.http.javadsl.model.ContentTypes;
+import akka.http.javadsl.model.HttpEntities;
+import akka.http.javadsl.model.HttpRequest;
+import akka.http.javadsl.model.HttpResponse;
 import akka.testkit.SocketUtil;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lightbend.artifactstate.app.StartNode;
+import com.lightbend.artifactstate.endpoint.ArtifactStatePocAPI;
 import com.lightbend.artifactstate.endpoint.ArtifactStateProto;
-import com.lightbend.artifactstate.endpoint.ArtifactStateProto.CommandResponse;
 import com.lightbend.artifactstate.endpoint.ArtifactStateProto.ArtifactAndUser;
+import com.lightbend.artifactstate.endpoint.ArtifactStateProto.CommandResponse;
 import com.lightbend.artifactstate.endpoint.ArtifactStateProto.ExtResponse;
+import com.lightbend.artifactstate.endpoint.ArtifactStateServiceClient;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-
-import com.lightbend.artifactstate.endpoint.ArtifactStateServiceClient;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import scala.jdk.CollectionConverters;
 
 import java.net.InetSocketAddress;
@@ -29,12 +40,6 @@ import java.util.stream.Collectors;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.*;
-
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class MultiNodeIntegrationTest {
     private static final Logger logger = LoggerFactory.getLogger(MultiNodeIntegrationTest.class);
@@ -132,11 +137,10 @@ public class MultiNodeIntegrationTest {
     private static TestNodeFixture testNode1;
     private static TestNodeFixture testNode2;
     private static TestEndpointFixture endpointNode3;
-    private static List<ActorSystem<?>> systems;
     private static final Duration requestTimeout = Duration.ofSeconds(10);
 
     @BeforeClass
-    public static void setup() throws Exception {
+    public static void setup() {
         logger.info("setup started...");
 
         // grab six temporary ports
@@ -151,12 +155,12 @@ public class MultiNodeIntegrationTest {
                         .map(InetSocketAddress::getPort)
                         .collect(Collectors.toList());
 
-        logger.info("management ports:" + managementPorts.toString());
+        logger.info("management ports:" + managementPorts);
 
         testNode1 = new TestNodeFixture(managementPorts, 0);
         testNode2 = new TestNodeFixture(managementPorts, 1);
         endpointNode3 = new TestEndpointFixture(8082, managementPorts, 2);
-        systems = Arrays.asList(testNode1.system, testNode2.system, endpointNode3.system);
+        List<ActorSystem<?>> systems = Arrays.asList(testNode1.system, testNode2.system, endpointNode3.system);
 
         testNode1.testKit.spawn(StartNode.rootBehavior());
         testNode2.testKit.spawn(StartNode.rootBehavior());
@@ -345,7 +349,187 @@ public class MultiNodeIntegrationTest {
     }
 
     @Test
-    public void testAllViaHttp() throws Exception {
+    public void testAllViaHttpPOST() throws Exception {
+        logger.info("testAllViaHttpPOST started...");
 
+        final ArtifactStatePocAPI.ArtifactAndUser artifactAndUser = new ArtifactStatePocAPI.ArtifactAndUser(2L, "Michael");
+        final ObjectMapper mapper = new ObjectMapper();
+        final String michael2 = mapper.writeValueAsString(artifactAndUser);
+
+        /// setArtifactReadByUser
+        final HttpResponse response1 =
+                Http.get(endpointNode3.system)
+                        .singleRequest(HttpRequest.POST("http://localhost:8082/artifactState/setArtifactReadByUser")
+                                .withEntity(HttpEntities.create(ContentTypes.APPLICATION_JSON, michael2)))
+                .toCompletableFuture()
+                .get(requestTimeout.getSeconds(), SECONDS);
+        final ArtifactStatePocAPI.CommandResponse commandResponse1 = Jackson.unmarshaller(ArtifactStatePocAPI.CommandResponse.class)
+                .unmarshal(response1.entity(), endpointNode3.system)
+                .toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
+
+        assertTrue(commandResponse1.getSuccess());
+
+        // isArtifactReadByUser
+        final HttpResponse response2 =
+                Http.get(endpointNode3.system)
+                        .singleRequest(HttpRequest.POST("http://localhost:8082/artifactState/isArtifactReadByUser")
+                                .withEntity(HttpEntities.create(ContentTypes.APPLICATION_JSON, michael2)))
+                        .toCompletableFuture()
+                        .get(requestTimeout.getSeconds(), SECONDS);
+
+        final ArtifactStatePocAPI.ExtResponse extResponse1 = Jackson.unmarshaller(ArtifactStatePocAPI.ExtResponse.class)
+                .unmarshal(response2.entity(), endpointNode3.system)
+                .toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
+        assertEquals(extResponse1.getArtifactId(), artifactAndUser.getArtifactId());
+        assertEquals(extResponse1.getUserId(), artifactAndUser.getUserId());
+        assertTrue(extResponse1.getAnswer());
+
+        // setArtifactAddedToUserFeed
+        final HttpResponse response3 =
+                Http.get(endpointNode3.system)
+                        .singleRequest(HttpRequest.POST("http://localhost:8082/artifactState/setArtifactAddedToUserFeed")
+                                .withEntity(HttpEntities.create(ContentTypes.APPLICATION_JSON, michael2)))
+                        .toCompletableFuture()
+                        .get(requestTimeout.getSeconds(), SECONDS);
+        final ArtifactStatePocAPI.CommandResponse commandResponse2 = Jackson.unmarshaller(ArtifactStatePocAPI.CommandResponse.class)
+                .unmarshal(response3.entity(), endpointNode3.system)
+                .toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
+
+        assertTrue(commandResponse2.getSuccess());
+
+        // isArtifactInUserFeed
+        final HttpResponse response4 =
+                Http.get(endpointNode3.system)
+                        .singleRequest(HttpRequest.POST("http://localhost:8082/artifactState/isArtifactInUserFeed")
+                                .withEntity(HttpEntities.create(ContentTypes.APPLICATION_JSON, michael2)))
+                        .toCompletableFuture()
+                        .get(requestTimeout.getSeconds(), SECONDS);
+
+        final ArtifactStatePocAPI.ExtResponse extResponse2 = Jackson.unmarshaller(ArtifactStatePocAPI.ExtResponse.class)
+                .unmarshal(response4.entity(), endpointNode3.system)
+                .toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
+        assertSame(extResponse2.getArtifactId(), artifactAndUser.getArtifactId());
+        assertEquals(extResponse2.getUserId(), artifactAndUser.getUserId());
+        assertTrue(extResponse2.getAnswer());
+        
+        // setArtifactRemovedFromUserFeed
+        final HttpResponse response5 =
+                Http.get(endpointNode3.system)
+                        .singleRequest(HttpRequest.POST("http://localhost:8082/artifactState/setArtifactRemovedFromUserFeed")
+                                .withEntity(HttpEntities.create(ContentTypes.APPLICATION_JSON, michael2)))
+                        .toCompletableFuture()
+                        .get(requestTimeout.getSeconds(), SECONDS);
+        final ArtifactStatePocAPI.CommandResponse commandResponse3 = Jackson.unmarshaller(ArtifactStatePocAPI.CommandResponse.class)
+                .unmarshal(response5.entity(), endpointNode3.system)
+                .toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
+
+        assertTrue(commandResponse3.getSuccess());
+
+        // getAllStates
+        final HttpResponse response6 =
+                Http.get(endpointNode3.system)
+                        .singleRequest(HttpRequest.POST("http://localhost:8082/artifactState/getAllStates")
+                                .withEntity(HttpEntities.create(ContentTypes.APPLICATION_JSON, michael2)))
+                        .toCompletableFuture()
+                        .get(requestTimeout.getSeconds(), SECONDS);
+
+        final ArtifactStatePocAPI.AllStatesResponse allStatesResponse = Jackson.unmarshaller(ArtifactStatePocAPI.AllStatesResponse.class)
+                .unmarshal(response6.entity(), endpointNode3.system)
+                .toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
+        assertSame(allStatesResponse.getArtifactId(), artifactAndUser.getArtifactId());
+        assertEquals(allStatesResponse.getUserId(), artifactAndUser.getUserId());
+        assertTrue(allStatesResponse.getArtifactRead());
+        assertFalse(allStatesResponse.getArtifactInUserFeed());
+
+        logger.info("testAllViaHttpPOST completed...");
+    }
+
+    @Test
+    public void testAllViaHttpGET() throws Exception {
+        logger.info("testAllViaHttpGET started...");
+
+        final ArtifactStatePocAPI.ArtifactAndUser artifactAndUser = new ArtifactStatePocAPI.ArtifactAndUser(3L, "Michael");
+        final String michael3Params = String.format("artifactId=%d&userId=%s", artifactAndUser.getArtifactId(), artifactAndUser.getUserId());
+
+        /// setArtifactReadByUser
+        final HttpResponse response1 =
+                Http.get(endpointNode3.system)
+                        .singleRequest(HttpRequest.GET("http://localhost:8082/artifactState/setArtifactReadByUser?" + michael3Params))
+                        .toCompletableFuture()
+                        .get(requestTimeout.getSeconds(), SECONDS);
+        final ArtifactStatePocAPI.CommandResponse commandResponse1 = Jackson.unmarshaller(ArtifactStatePocAPI.CommandResponse.class)
+                .unmarshal(response1.entity(), endpointNode3.system)
+                .toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
+
+        assertTrue(commandResponse1.getSuccess());
+
+        // isArtifactReadByUser
+        final HttpResponse response2 =
+                Http.get(endpointNode3.system)
+                        .singleRequest(HttpRequest.GET("http://localhost:8082/artifactState/isArtifactReadByUser?" + michael3Params))
+                        .toCompletableFuture()
+                        .get(requestTimeout.getSeconds(), SECONDS);
+
+        final ArtifactStatePocAPI.ExtResponse extResponse1 = Jackson.unmarshaller(ArtifactStatePocAPI.ExtResponse.class)
+                .unmarshal(response2.entity(), endpointNode3.system)
+                .toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
+        assertEquals(extResponse1.getArtifactId(), artifactAndUser.getArtifactId());
+        assertEquals(extResponse1.getUserId(), artifactAndUser.getUserId());
+        assertTrue(extResponse1.getAnswer());
+
+        // setArtifactAddedToUserFeed
+        final HttpResponse response3 =
+                Http.get(endpointNode3.system)
+                        .singleRequest(HttpRequest.GET("http://localhost:8082/artifactState/setArtifactAddedToUserFeed?" + michael3Params))
+                        .toCompletableFuture()
+                        .get(requestTimeout.getSeconds(), SECONDS);
+        final ArtifactStatePocAPI.CommandResponse commandResponse2 = Jackson.unmarshaller(ArtifactStatePocAPI.CommandResponse.class)
+                .unmarshal(response3.entity(), endpointNode3.system)
+                .toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
+
+        assertTrue(commandResponse2.getSuccess());
+
+        // isArtifactInUserFeed
+        final HttpResponse response4 =
+                Http.get(endpointNode3.system)
+                        .singleRequest(HttpRequest.GET("http://localhost:8082/artifactState/isArtifactInUserFeed?" + michael3Params))
+                        .toCompletableFuture()
+                        .get(requestTimeout.getSeconds(), SECONDS);
+
+        final ArtifactStatePocAPI.ExtResponse extResponse2 = Jackson.unmarshaller(ArtifactStatePocAPI.ExtResponse.class)
+                .unmarshal(response4.entity(), endpointNode3.system)
+                .toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
+        assertSame(extResponse2.getArtifactId(), artifactAndUser.getArtifactId());
+        assertEquals(extResponse2.getUserId(), artifactAndUser.getUserId());
+        assertTrue(extResponse2.getAnswer());
+
+        // setArtifactRemovedFromUserFeed
+        final HttpResponse response5 =
+                Http.get(endpointNode3.system)
+                        .singleRequest(HttpRequest.GET("http://localhost:8082/artifactState/setArtifactRemovedFromUserFeed?" + michael3Params))
+                        .toCompletableFuture()
+                        .get(requestTimeout.getSeconds(), SECONDS);
+        final ArtifactStatePocAPI.CommandResponse commandResponse3 = Jackson.unmarshaller(ArtifactStatePocAPI.CommandResponse.class)
+                .unmarshal(response5.entity(), endpointNode3.system)
+                .toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
+
+        assertTrue(commandResponse3.getSuccess());
+
+        // getAllStates
+        final HttpResponse response6 =
+                Http.get(endpointNode3.system)
+                        .singleRequest(HttpRequest.GET("http://localhost:8082/artifactState/getAllStates?" + michael3Params))
+                        .toCompletableFuture()
+                        .get(requestTimeout.getSeconds(), SECONDS);
+
+        final ArtifactStatePocAPI.AllStatesResponse allStatesResponse = Jackson.unmarshaller(ArtifactStatePocAPI.AllStatesResponse.class)
+                .unmarshal(response6.entity(), endpointNode3.system)
+                .toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
+        assertSame(allStatesResponse.getArtifactId(), artifactAndUser.getArtifactId());
+        assertEquals(allStatesResponse.getUserId(), artifactAndUser.getUserId());
+        assertTrue(allStatesResponse.getArtifactRead());
+        assertFalse(allStatesResponse.getArtifactInUserFeed());
+
+        logger.info("testAllViaHttpGET completed...");
     }
 }
