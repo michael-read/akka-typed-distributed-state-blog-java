@@ -12,7 +12,11 @@ In this four part blog series, we walk you through a working Proof of Concept (P
 ## Update Feb 15, 2022
 - This repository is the Java version of the original Scala version found [here](https://github.com/michael-read/akka-typed-distributed-state-blog).
 - Testing [Lightbend's Akka Persistence Plugin for R2DBC](https://github.com/akka/akka-persistence-r2dbc).
-- TODO: In the process of building, multi-node tests, docker, and K8s examples for Yugabyte
+
+## Update March 23, 2002
+- Complete multi-node testing: integration tests for cluster formation, and gRPC, and http endpoints running under Maven.
+- Upgrade Akka, Akka Http, and Akka gRPC to latest.
+- multi-node testing defaults to Cassandra, but commenting change be changed to use Yugabyte instead.
 
 ## How to Generate Protobuf interfaces and stubs
 ```
@@ -25,13 +29,19 @@ mvn clean akka-grpc:generate
 [Elasticsearch developer sandbox](https://developer.lightbend.com/docs/telemetry/current/sandbox/elastic-sandbox.html#elasticsearch-developer-sandbox)
 
 ### Start Cassandra in Docker
+````
 docker-compose -f docker-compose-cassandra.yml up
+````
 
 ### Start a cluster node
+````
 mvn compile exec:exec -Dapp.configfile="cluster-application.conf"
+````
 
 ### Start a endpoint node
+````
 mvn exec:exec -Dapp.configfile="endpoint-application.conf"
+````
 
 ## Running a cluster locally with Yugabyte
 
@@ -39,13 +49,28 @@ mvn exec:exec -Dapp.configfile="endpoint-application.conf"
 [Elasticsearch developer sandbox](https://developer.lightbend.com/docs/telemetry/current/sandbox/elastic-sandbox.html#elasticsearch-developer-sandbox)
 
 ### Start Yugabyte in Docker
+````
 docker-compose -f docker-compose-yugabyte.yml up
+````
 
 ### First time, create the tables
+````
 docker exec -i yb-tserver-n1 /home/yugabyte/bin/ysqlsh -h yb-tserver-n1 -t < https://raw.githubusercontent.com/akka/akka-persistence-r2dbc/main/ddl-scripts/create_tables_yugabyte.sql
+````
 
 ### Start a cluster node
+````
 mvn compile exec:exec -Dapp.configfile="cluster-application-yugabyte.conf"
+````
 
 ### Start a endpoint node
+````
 mvn exec:exec -Dapp.configfile="endpoint-application.conf"
+````
+
+## Running Multi-Node Tests
+1. Start Cassandra first (above)
+2. Start the test
+````
+mvn test
+ ````

@@ -41,20 +41,19 @@ public class StartNode {
 
     public static void main(String[] args) {
         String clusterName = appConfig.getString("clustering.cluster.name");
-        int clusterPort = appConfig.getInt("clustering.port");
-        int defaultPort = appConfig.getInt("clustering.defaultPort");
         if (appConfig.hasPath("clustering.ports")) {
             List<Integer> clusterPorts = appConfig.getIntList("clustering.ports");
             clusterPorts.forEach(port -> {
-                startNode(rootBehavior(port, defaultPort), clusterName);
+                startNode(rootBehavior(), clusterName);
             });
         }
         else {
-            startNode(rootBehavior(clusterPort, defaultPort), clusterName);
+            startNode(rootBehavior(), clusterName);
         }
     }
 
-    private static Behavior<NotUsed> rootBehavior(int port, int defaultPort) {
+//    public static Behavior<NotUsed> rootBehavior(int port, int defaultPort) {
+    public static Behavior<NotUsed> rootBehavior() {
         return Behaviors.setup(context -> {
             try {
                 EntityTypeKey<ArtifactCommand> typeKey = EntityTypeKey.create(ArtifactCommand.class, ArtifactStateEntityActor.ARTIFACTSTATESHARDNAME);
@@ -120,4 +119,5 @@ context.getLog().info(String.format("starting endpoint on interface %s:%d", intf
         ActorSystem<NotUsed> system = ActorSystem.create(behavior, clusterName, appConfig);
         return system.getWhenTerminated();
     }
+
 }

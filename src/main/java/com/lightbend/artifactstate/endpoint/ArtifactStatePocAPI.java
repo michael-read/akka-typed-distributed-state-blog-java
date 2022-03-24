@@ -33,14 +33,20 @@ public class ArtifactStatePocAPI {
         String failureMsg = "";
 
         @JsonCreator
-        public ExtResponse(@JsonProperty("artifactId") Long artifactId, @JsonProperty("userId") String userId, @JsonProperty("answer") Boolean answer) {
+        public ExtResponse(@JsonProperty("artifactId") Long artifactId, @JsonProperty("userId") String userId, @JsonProperty("answer") Boolean answer, @JsonProperty("failureMsg") String failureMsg) {
+            this.artifactId = artifactId;
+            this.userId = userId;
+            this.answer = answer;
+            this.failureMsg = failureMsg;
+        }
+
+        public ExtResponse(Long artifactId, String userId, Boolean answer) {
             this.artifactId = artifactId;
             this.userId = userId;
             this.answer = answer;
         }
 
-        @JsonCreator
-        public ExtResponse(@JsonProperty("artifactId") Long artifactId, @JsonProperty("userId") String userId, @JsonProperty("failureMsg") String failureMsg) {
+        public ExtResponse(Long artifactId, String userId, String failureMsg) {
             this.artifactId = artifactId;
             this.userId = userId;
             this.failureMsg = failureMsg;
@@ -78,8 +84,7 @@ public class ArtifactStatePocAPI {
             this.artifactInUserFeed = artifactInUserFeed;
         }
 
-        @JsonCreator
-        public AllStatesResponse(@JsonProperty("artifactId") Long artifactId, @JsonProperty("userId") String userId, @JsonProperty("failureMsg") String failureMsg) {
+        public AllStatesResponse(Long artifactId, String userId, String failureMsg) {
             this.artifactId = artifactId;
             this.userId = userId;
             this.failureMsg = failureMsg;
