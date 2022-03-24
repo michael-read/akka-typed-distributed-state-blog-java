@@ -13,7 +13,7 @@ In this four part blog series, we walk you through a working Proof of Concept (P
 - This repository is the Java version of the original Scala version found [here](https://github.com/michael-read/akka-typed-distributed-state-blog).
 - Testing [Lightbend's Akka Persistence Plugin for R2DBC](https://github.com/akka/akka-persistence-r2dbc).
 
-## Update March 23, 2002
+## Update March 23, 2022
 - Complete multi-node testing: integration tests for cluster formation, and gRPC, and http endpoints running under Maven.
 - Upgrade Akka, Akka Http, and Akka gRPC to latest.
 - multi-node testing defaults to Cassandra, but commenting change be changed to use Yugabyte instead.
