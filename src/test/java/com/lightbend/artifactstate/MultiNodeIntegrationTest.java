@@ -45,7 +45,7 @@ public class MultiNodeIntegrationTest {
     private static final Logger logger = LoggerFactory.getLogger(MultiNodeIntegrationTest.class);
 
     private static Config sharedConfig() {
-        return ConfigFactory.load("multinode-test-cassandra.conf");
+        return ConfigFactory.load("multinode-test.conf");
     }
 
     private static Config nodeConfig() {
@@ -56,7 +56,15 @@ public class MultiNodeIntegrationTest {
                 + "\n"
                 + "}"
                 + "\n"
-                + "akka.persistence {"
+        ).withFallback(persistenceConfig());
+    }
+
+    /*
+    Using Cassandra with Akka Persistence by default. If you want to use Yugabyte instead, please see configuration below.
+     */
+    private static Config persistenceConfig() {
+        return ConfigFactory.parseString(
+                "akka.persistence {"
                     + "\n"
                     + "journal.plugin = \"akka.persistence.cassandra.journal\""
                     + "\n"
@@ -82,7 +90,7 @@ public class MultiNodeIntegrationTest {
                         + "tables-autocreate = true"
                         + "\n"
                     + "}"
-                    + "\n"
+                + "\n"
                 + "}"
                 + "\n"
                 + "datastax-java-driver {"
@@ -97,6 +105,32 @@ public class MultiNodeIntegrationTest {
                 + "\n"
         );
     }
+
+    /*
+    Yugabyte R2DBC Persistence driver. Comment out Cassandra above, and uncomment the following to use Yugabyte.
+     */
+/*
+    private static Config persistenceConfig() {
+        return ConfigFactory.parseString(
+            "akka.persistence {\n"
+                + "journal.plugin = \"akka.persistence.r2dbc.journal\"\n"
+                + "snapshot-store.plugin = \"akka.persistence.r2dbc.snapshot\"\n"
+                + "state.plugin = \"akka.persistence.r2dbc.durable-state-store\"\n"
+                + "r2dbc {\n"
+                    + "dialect = \"yugabyte\"\n"
+                    + "connection-factory {\n"
+                        + "driver = \"postgres\"\n"
+                        + "host = \"127.0.0.1\"\n"
+                        + "port = 5433\n"
+                        + "database = \"yugabyte\"\n"
+                        + "user = \"yugabyte\"\n"
+                        + "password = \"yugabyte\"\n"
+                    + "}\n"
+                + "}\n"
+            + "}\n"
+        );
+    }
+*/
 
     private static Config endpointContig(int grcpPort) {
         return ConfigFactory.parseString(
