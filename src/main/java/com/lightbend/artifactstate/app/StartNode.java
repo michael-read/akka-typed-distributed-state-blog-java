@@ -97,10 +97,10 @@ context.getLog().info(String.format("starting endpoint on interface %s:%d", intf
 
                         // Note: use System.out.printf to see the result of the binding
                         binding.thenApply(boundTo -> {
-                            System.out.printf("HTTP / gRPC Server online at ip %s:%d", boundTo.localAddress(), httpPort);
+                            System.out.printf("HTTP / gRPC Server online at ip %s:%d\n", boundTo.localAddress(), httpPort);
                             return null;
                         }).exceptionally(ex -> {
-                            System.out.printf("HTTP / gRPC Server binding failed at ip %s:%d\", boundTo.localAddress(), httpPort");
+                            System.out.printf("HTTP Server binding failed at %s:%d\n", intf, httpPort);
                             System.out.printf("exception:%s", ex.getMessage());
                             ex.printStackTrace();
                             return null;
