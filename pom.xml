@@ -6,12 +6,12 @@
 
     <groupId>com.lightbend</groupId>
     <artifactId>akka-typed-distributed-state-blog-java</artifactId>
-    <version>1.0</version>
+    <version>1.1</version>
     <packaging>jar</packaging>
 
     <properties>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
         <akka.version>2.6.19</akka.version>
         <akka.http.version>10.2.9</akka.http.version>
         <akka.management.version>1.1.3</akka.management.version>
@@ -23,7 +23,8 @@
         <!-- The Scala versions -->
         <scala.version>2.13.8</scala.version>
         <scala.binary.version>2.13</scala.binary.version>
-        <app.configfile>cluster-application.conf</app.configfile>
+        <app.configfile>cluster-application-docker-dns.conf</app.configfile>
+        <docker.maven.plugin.version>0.40.2</docker.maven.plugin.version>
     </properties>
 
     <repositories>
@@ -312,6 +313,73 @@
                     <generateServer>true</generateServer>
                 </configuration>
             </plugin>
+
+            <!-- docker image creation -->
+            <plugin>
+                <groupId>io.fabric8</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>${docker.maven.plugin.version}</version>
+                <configuration>
+                    <images>
+                        <image>
+                            <name>%a:%v</name>
+                            <registry>docker.io/${docker.username}</registry>
+                            <build>
+                                <from>eclipse-temurin/eclipse-temurin:17-alpine</from>
+
+                                <env>
+                                    <LOGBACK_CONFIG>-Dlogback.configurationFile=/opt/logging/logback.xml -Dakka.loggers.0=akka.event.slf4j.Slf4jLogger -Dakka.loglevel=DEBUG -Dakka.logging-filter=akka.event.slf4j.Slf4jLoggingFilter</LOGBACK_CONFIG>
+                                </env>
+
+                                <runCmds>
+                                    <run>apk add bash curl</run>
+                                    <run>mkdir -p /home/cloudflow /opt /prometheus</run>
+                                    <run>addgroup -g 185 -S cloudflow</run>
+                                    <run>adduser -u 185 -S -h /home/cloudflow -s /sbin/nologin cloudflow cloudflow</run>
+                                    <run>curl https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.11.0/jmx_prometheus_javaagent-0.11.0.jar -o /prometheus/jmx_prometheus_javaagent.jar</run>
+                                    <run>chmod a+x /opt/akka-entrypoint.sh</run>
+                                </runCmds>
+
+                                <assemblies>
+
+                                    <assembly>
+                                        <name>lightbend-telemetry-agent</name>
+                                        <targetDir>/opt/cloudflow</targetDir>
+                                        <inline>
+                                            <files>
+                                                <file>
+                                                    <source>${basedir}/target/dependency/cinnamon-agent-${cinnamon.version}.jar</source>
+                                                </file>
+                                            </files>
+                                        </inline>
+                                        <user>185</user>
+                                    </assembly>
+
+                                    <assembly>
+                                        <name>additional-resources</name>
+                                        <mode>dir</mode>
+                                        <targetDir>/opt</targetDir>
+                                        <user>185</user>
+                                        <inline>
+                                            <files>
+                                                <file>
+                                                    <source>${basedir}/src/main/resources/akka-entrypoint.sh</source>
+                                                </file>
+                                            </files>
+                                        </inline>
+                                    </assembly>
+
+                                </assemblies>
+
+                                <user>185</user>
+
+                            </build>
+                        </image>
+                    </images>
+                </configuration>
+            </plugin>
+            <!-- END docker image creation -->
+
         </plugins>
     </build>
 </project>
