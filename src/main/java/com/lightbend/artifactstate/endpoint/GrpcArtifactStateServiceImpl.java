@@ -38,7 +38,7 @@ public class GrpcArtifactStateServiceImpl implements ArtifactStateService {
                 return ArtifactStateProto.ExtResponse.newBuilder()
                         .setArtifactId(in.getArtifactId())
                         .setUserId(in.getUserId())
-                        .setAnswer(reply.artifactRead)
+                        .setAnswer(reply.artifactRead())
                         .build();
             else
                 return ArtifactStateProto.ExtResponse.newBuilder()
@@ -67,7 +67,7 @@ public class GrpcArtifactStateServiceImpl implements ArtifactStateService {
                 return ArtifactStateProto.ExtResponse.newBuilder()
                         .setArtifactId(in.getArtifactId())
                         .setUserId(in.getUserId())
-                        .setAnswer(reply.artifactInUserFeed)
+                        .setAnswer(reply.artifactInUserFeed())
                         .build();
             else
                 return ArtifactStateProto.ExtResponse.newBuilder()
@@ -96,8 +96,8 @@ public class GrpcArtifactStateServiceImpl implements ArtifactStateService {
                 return ArtifactStateProto.AllStatesResponse.newBuilder()
                         .setArtifactId(in.getArtifactId())
                         .setUserId(in.getUserId())
-                        .setArtifactRead(reply.artifactRead)
-                        .setArtifactInUserFeed(reply.artifactInUserFeed)
+                        .setArtifactRead(reply.artifactRead())
+                        .setArtifactInUserFeed(reply.artifactInUserFeed())
                         .build();
             else
                 return ArtifactStateProto.AllStatesResponse.newBuilder()

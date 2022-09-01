@@ -41,3 +41,8 @@ docker-compose --compatibility -f docker-compose-dns.yml up -d
 docker exec -it yb-tserver-n1 /home/yugabyte/bin/ysqlsh -h yb-tserver-n1
 ```
 2. Follow Creating the Schema [here](https://doc.akka.io/docs/akka-persistence-r2dbc/current/getting-started.html#creating-the-schema).
+
+## Test it
+The port for API endpoint is exposed as localhost:8082, and Akka Mgmt as localhost:8558
+
+Discussion for the API can be found on [Part 1](https://www.lightbend.com/blog/how-to-distribute-application-state-with-akka-cluster-part-1-getting-started) under "Running the PoC locally" 
