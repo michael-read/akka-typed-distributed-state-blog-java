@@ -1,18 +1,18 @@
 # Akka Cluster Bootstrap on Docker w/ DNS and Yugabyte
 
 ## Download and Run the Prometheus Telemetery Sandbox
-1. First download Prometheus developer sandbox and unzip the developer sandbox scripts. You can do this in a terminal with:
+1. First download ElasticSearch developer sandbox and unzip the developer sandbox scripts. You can do this in a terminal with:
 ```
-curl -O https://downloads.lightbend.com/cinnamon/sandbox/cinnamon-prometheus-docker-sandbox-2.17.0.zip
-unzip cinnamon-prometheus-docker-sandbox-2.17.0.zip
+curl -O https://downloads.lightbend.com/cinnamon/sandbox/cinnamon-elasticsearch-docker-sandbox-2.17.0.zip
+unzip cinnamon-elasticsearch-docker-sandbox-2.17.0.zip
 ```
-2. switch into the cinnamon-prometheus-docker-sandbox-2.17.0 directory in your terminal.
+2. Switch into the `cinnamon-elasticsearch-docker-sandbox-2.17.0` directory in your terminal.
 ```
-cd cinnamon-prometheus-docker-sandbox-2.17.0
+cd cinnamon-elasticsearch-docker-sandbox-2.17.0
 ```
 3. Start the Sandbox on Linux:
 ```
-docker-compose -f linux/docker-compose.yml up
+docker-compose -f docker-compose.yml up
 ```
 
 ## Start the Docker cluster from Terminal Window

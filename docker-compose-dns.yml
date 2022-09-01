@@ -59,8 +59,9 @@ services:
       JAVA_OPTS: "-Dconfig.resource=cluster-application-docker-dns.conf"
       CLUSTER_IP: cluster
       DB_HOST: yb-tserver
+      CINNAMON_ELASTIC_HOSTS: elasticsearch:9200
     networks:
-    - linux_sandbox
+    - cinnamon-elasticsearch-docker-sandbox-2170_sandbox
     - statepoc
 
   # Note: if you need more than one instance of the endpoint,
@@ -74,20 +75,19 @@ services:
     environment:
       JAVA_OPTS: "-Dconfig.resource=endpoint-application-docker-dns.conf"
       CLUSTER_IP: endpoint
+      CINNAMON_ELASTIC_HOSTS: elasticsearch:9200
     ports:
     - "8082:8082"
     - "8558:8558"
     networks:
-    - linux_sandbox
+    - cinnamon-elasticsearch-docker-sandbox-2170_sandbox
     - statepoc
 
 
 networks:
-#  dbinternal:
-#  dbnet:
 
-  #Note: this network name must match the version of the sandbox
-  linux_sandbox:
+  #Note: this network name must match the version of the Telemetry sandbox
+  cinnamon-elasticsearch-docker-sandbox-2170_sandbox:
     external: true
 
   statepoc:
