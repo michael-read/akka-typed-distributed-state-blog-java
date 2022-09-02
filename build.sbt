@@ -113,6 +113,7 @@ lazy val root = (project in file("."))
     )
   )
   .settings(
+//  dockerBaseImage := "openjdk:11-slim",
     dockerBaseImage := "eclipse-temurin:17",
 //    dockerExposedPorts ++= Seq(9200, 2552, 8558)  // elastic search port is 9200, cluster gossip port (2552), and akka mgmt port (8558)
     dockerExposedPorts ++= Seq(9200)  // elastic search port is 9200
