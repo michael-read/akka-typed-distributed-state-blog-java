@@ -19,7 +19,8 @@ In this four part blog series, we walk you through a working Proof of Concept (P
 - multi-node testing defaults to Cassandra, but commenting change be changed to use Yugabyte instead.
 
 ## Update September 1, 2022
-- trying Akka DNS cluster formation on Docker w/ Yugabyte. Doc [here](DOCKER_DNS_YUGABYTE.md).
+- Moved to Java 17: Updated Actor Protocols and Events to Records
+- Akka DNS cluster formation on Docker w/ Yugabyte. Doc [here](DOCKER_DNS_YUGABYTE.md).
 
 ## How to Generate Protobuf interfaces and stubs
 ```
