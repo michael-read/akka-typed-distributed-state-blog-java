@@ -52,7 +52,7 @@ services:
       - statepoc
 
   cluster:
-    image: akka-typed-blog-distributed-state/cluster:0.1.4
+    image: akka-typed-blog-distributed-state/cluster:1.1.1
     deploy:
       replicas: 3
     environment:
@@ -67,7 +67,7 @@ services:
   # Note: if you need more than one instance of the endpoint,
   #       you'll need to duplicate, instead of replicas, because of port conflicts
   endpoint:
-    image: akka-typed-blog-distributed-state/cluster:0.1.4
+    image: akka-typed-blog-distributed-state/cluster:1.1.1
     links:
       - cluster
     depends_on:

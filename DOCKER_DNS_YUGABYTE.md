@@ -1,6 +1,6 @@
 # Akka Cluster Bootstrap on Docker w/ DNS and Yugabyte
 
-## Download and Run the Prometheus Telemetery Sandbox
+## Download and Run the ElasticSearch Telemetery Sandbox
 1. First download ElasticSearch developer sandbox and unzip the developer sandbox scripts. You can do this in a terminal with:
 ```
 curl -O https://downloads.lightbend.com/cinnamon/sandbox/cinnamon-elasticsearch-docker-sandbox-2.17.0.zip
@@ -18,12 +18,24 @@ docker-compose -f docker-compose.yml up
 ## Start the Docker cluster from Terminal Window
 
 ### Build the image and publish to your local docker
+
+#### With Maven
+
+Note: mvn isn't working yet... recommend using sbt below.
+```
+mvn \
+    clean \
+    package \
+    docker:build
+```
+
+#### With sbt
 start `sbt` and then issue `docker:publishLocal`
 ```
 sbt
 sbt:akka-typed-distributed-state-blog-java> docker:publishLocal
 ```
-TODO: a Maven version
+
 
 ### Watch it happen
 ```

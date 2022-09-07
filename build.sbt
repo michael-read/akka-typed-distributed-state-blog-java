@@ -2,8 +2,8 @@ import com.lightbend.cinnamon.sbt.Cinnamon.CinnamonKeys.cinnamon
 import com.typesafe.sbt.SbtMultiJvm.multiJvmSettings
 import com.typesafe.sbt.SbtMultiJvm.MultiJvmKeys.MultiJvm
 
-lazy val akkaHttpVersion = "10.2.9"
-lazy val akkaVersion     = "2.6.19"
+lazy val akkaHttpVersion = "10.2.10"
+lazy val akkaVersion     = "2.6.20"
 lazy val logbackVersion  = "1.2.3"
 lazy val akkaManagementVersion = "1.1.4"
 lazy val akkaCassandraVersion  = "1.0.5"
@@ -12,7 +12,7 @@ lazy val akkaEnhancementsVersion = "1.1.16"
 lazy val akkaYugaByteVersion = "0.7.1"
 
 name := "akka-typed-distributed-state-blog-java"
-ThisBuild / version := "0.1.4"
+ThisBuild / version := "1.1.1"
 ThisBuild / organization := "com.lightbend"
 ThisBuild / scalaVersion := "2.13.6"
 ThisBuild / scalacOptions += "-deprecation"
