@@ -22,6 +22,10 @@ In this four part blog series, we walk you through a working Proof of Concept (P
 - Moved to Java 17: converted Actor Protocols and Events to Records
 - Akka DNS cluster formation on Docker w/ Yugabyte. Doc [here](DOCKER_DNS_YUGABYTE.md).
 
+## Update September 7, 2022
+- update Akka related dependencies to latest
+- Learned that `sbt` uses the env variable `JAVA_OPTS` to pass configs to Java whereas Maven w/ [Fabric8](https://github.com/fabric8io/docker-maven-plugin) uses `JAVA_TOOL_OPTIONS`.
+
 ## How to Generate Protobuf interfaces and stubs
 ```
 mvn clean akka-grpc:generate
