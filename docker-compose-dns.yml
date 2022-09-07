@@ -56,7 +56,10 @@ services:
     deploy:
       replicas: 3
     environment:
+      # for images built with sbt
       JAVA_OPTS: "-Dconfig.resource=cluster-application-docker-dns.conf"
+      # for images built with Maven
+      JAVA_TOOL_OPTIONS: "-Dconfig.resource=cluster-application-docker-dns.conf"
       CLUSTER_IP: cluster
       DB_HOST: yb-tserver
       CINNAMON_ELASTIC_HOSTS: elasticsearch:9200
@@ -73,7 +76,10 @@ services:
     depends_on:
       - cluster
     environment:
+      # for images built with sbt
       JAVA_OPTS: "-Dconfig.resource=endpoint-application-docker-dns.conf"
+      # for images built with Maven
+      JAVA_TOOL_OPTIONS: "-Dconfig.resource=endpoint-application-docker-dns.conf"
       CLUSTER_IP: endpoint
       CINNAMON_ELASTIC_HOSTS: elasticsearch:9200
     ports:
