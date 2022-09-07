@@ -16,12 +16,11 @@ docker-compose -f docker-compose.yml up
 ```
 
 ## Start the Docker cluster from Terminal Window
-
+Note: I'm finding that cluster formation on Docker isn't 100% reliable. I'm continuing to look into the problem.
 ### Build the image and publish to your local docker
 
 #### With Maven
 
-Note: mvn isn't working yet... recommend using sbt below.
 ```
 mvn \
     clean \
