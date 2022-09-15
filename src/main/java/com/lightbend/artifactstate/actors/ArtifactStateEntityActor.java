@@ -3,15 +3,22 @@ package com.lightbend.artifactstate.actors;
 import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
 import akka.actor.typed.javadsl.Behaviors;
-import akka.persistence.typed.PersistenceId;
+import akka.persistence.typed.ReplicaId;
+import akka.persistence.typed.ReplicationId;
 import akka.persistence.typed.javadsl.*;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.lightbend.artifactstate.serializer.EventSerializeMarker;
 import com.lightbend.artifactstate.serializer.MsgSerializeMarker;
 
+import java.util.Set;
+
+/*
 public class ArtifactStateEntityActor
         extends EventSourcedBehavior<ArtifactStateEntityActor.ArtifactCommand, ArtifactStateEntityActor.ArtifactEvent, ArtifactStateEntityActor.CurrState> {
+*/
+public class ArtifactStateEntityActor
+        extends ReplicatedEventSourcedBehavior<ArtifactStateEntityActor.ArtifactCommand, ArtifactStateEntityActor.ArtifactEvent, ArtifactStateEntityActor.CurrState> {
 
     public final static String ARTIFACTSTATESHARDNAME = "ArtifactState";
 
@@ -54,12 +61,26 @@ public class ArtifactStateEntityActor
 
     public static record CurrState(Boolean artifactRead, Boolean artifactInUserFeed) implements MsgSerializeMarker {}
 
+/*
     public static Behavior<ArtifactCommand> create(String entityId) {
         return Behaviors.setup(context -> new ArtifactStateEntityActor(entityId));
     }
-
+*/
+    public static Behavior<ArtifactCommand> create(String entityId, ReplicaId dataCenter, Set<ReplicaId> allDataCenters, String queryPluginId) {
+        return Behaviors.setup(context -> {
+            return ReplicatedEventSourcing.commonJournalConfig(
+                    new ReplicationId(ARTIFACTSTATESHARDNAME, entityId, dataCenter),
+                    allDataCenters, queryPluginId, ArtifactStateEntityActor::new);
+        });
+    }
+/*
     private ArtifactStateEntityActor(String entityId) {
         super(PersistenceId.apply(ARTIFACTSTATESHARDNAME, entityId));
+    }
+*/
+
+    private ArtifactStateEntityActor(ReplicationContext replicationContext) {
+        super(replicationContext);
     }
 
     @Override

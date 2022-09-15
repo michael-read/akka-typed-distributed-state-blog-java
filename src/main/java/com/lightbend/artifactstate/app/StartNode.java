@@ -19,6 +19,7 @@ import static akka.http.javadsl.server.Directives.*;
 import akka.cluster.typed.Cluster;
 import akka.management.cluster.bootstrap.ClusterBootstrap;
 import akka.management.javadsl.AkkaManagement;
+import akka.persistence.typed.ReplicaId;
 import com.lightbend.artifactstate.actors.ArtifactStateEntityActor;
 import com.lightbend.artifactstate.actors.ArtifactStateEntityActor.ArtifactCommand;
 import com.lightbend.artifactstate.endpoint.ArtifactStateRoutes;
@@ -34,7 +35,10 @@ import akka.actor.typed.javadsl.Behaviors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletionStage;
 
 public class StartNode {
@@ -44,21 +48,36 @@ public class StartNode {
 
     public static void main(String[] args) {
         String clusterName = appConfig.getString("clustering.cluster.name");
+
+        ReplicaId dataCenter = (appConfig.hasPath("akka.cluster.multi-data-center.self-data-center")) ?
+            new ReplicaId(appConfig.getString("akka.cluster.multi-data-center.self-data-center")) : new ReplicaId("dc-default");
+
+        Set<ReplicaId> dcsConfigs = new HashSet<>();
+        if (appConfig.hasPath("clustering.allDataCenters")) {
+            Arrays.stream(appConfig.getString("clustering.allDataCenters").split(",")).map ( dc ->
+                dcsConfigs.add(new ReplicaId(dc)));
+        }
+        String queryPluginId = appConfig.getString("clustering.queryPluginId");
+
         if (appConfig.hasPath("clustering.ports")) {
             List<Integer> clusterPorts = appConfig.getIntList("clustering.ports");
             clusterPorts.forEach(port -> {
-                startNode(rootBehavior(), clusterName);
+                startNode(rootBehavior(dataCenter, dcsConfigs, queryPluginId), clusterName);
             });
         }
         else {
-            startNode(rootBehavior(), clusterName);
+            startNode(rootBehavior(dataCenter, dcsConfigs, queryPluginId), clusterName);
         }
     }
 
 //    public static Behavior<NotUsed> rootBehavior(int port, int defaultPort) {
-    public static Behavior<NotUsed> rootBehavior() {
+    public static Behavior<NotUsed> rootBehavior(ReplicaId dataCenter, Set<ReplicaId> allDataCenters, String queryPluginId) {
         return Behaviors.setup(context -> {
             try {
+                context.getLog().info(String.format("init RootBehavior: data center: %s", dataCenter));
+                context.getLog().info(String.format("init RootBehavior: all data centers : %s", allDataCenters));
+                context.getLog().info(String.format("init RootBehavior: queryPluginId: %s", queryPluginId));
+
                 EntityTypeKey<ArtifactCommand> typeKey = EntityTypeKey.create(ArtifactCommand.class, ArtifactStateEntityActor.ARTIFACTSTATESHARDNAME);
 
                 Cluster cluster = Cluster.get(context.getSystem());
@@ -72,14 +91,16 @@ public class StartNode {
                 if (cluster.selfMember().hasRole("sharded")) {
 context.getLog().info("starting node as sharded..");
                     ClusterSharding.get(context.getSystem()).init(
-                            Entity.of(typeKey, ctx -> ArtifactStateEntityActor.create(ctx.getEntityId()))
-                                    .withSettings(ClusterShardingSettings.create(context.getSystem()).withRole("sharded")));
+                            Entity.of(typeKey, ctx -> ArtifactStateEntityActor.create(ctx.getEntityId(), dataCenter, allDataCenters, queryPluginId))
+                                    .withSettings(ClusterShardingSettings.create(context.getSystem()).withRole("sharded"))
+                                    .withDataCenter(dataCenter.id()));
                 } else {
                     if (cluster.selfMember().hasRole("endpoint")) {
 context.getLog().info("bootstrapping endpoint...");
                         ActorRef<ShardingEnvelope<ArtifactCommand>> psCommandActor =
                                 ClusterSharding.get(context.getSystem()).init(
-                                        Entity.of(typeKey, ctx -> ArtifactStateEntityActor.create(ctx.getEntityId())));
+                                        Entity.of(typeKey, ctx -> ArtifactStateEntityActor.create(ctx.getEntityId(), dataCenter, allDataCenters, queryPluginId))
+                                                .withDataCenter(dataCenter.id()));
 
                         Route routes = new ArtifactStateRoutes(context.getSystem(), psCommandActor).psRoutes();
                         int httpPort = context.getSystem().settings().config().getInt("akka.http.server.default-http-port");
