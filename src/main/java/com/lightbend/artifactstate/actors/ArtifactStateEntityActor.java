@@ -5,13 +5,10 @@ import akka.actor.typed.Behavior;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.persistence.typed.PersistenceId;
 import akka.persistence.typed.javadsl.*;
-
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.lightbend.artifactstate.serializer.EventSerializeMarker;
 import com.lightbend.artifactstate.serializer.MsgSerializeMarker;
-
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class ArtifactStateEntityActor
         extends EventSourcedBehavior<ArtifactStateEntityActor.ArtifactCommand, ArtifactStateEntityActor.ArtifactEvent, ArtifactStateEntityActor.CurrState> {
@@ -23,136 +20,39 @@ public class ArtifactStateEntityActor
     public interface ArtifactResponse extends MsgSerializeMarker {}
 
     // queries
-    public static class IsArtifactReadByUser implements ArtifactQuery {
-        public final ActorRef<ArtifactReadByUser> replyTo;
-        public final Long artifactId;
-        public final String userId;
+    public static record IsArtifactReadByUser(@JsonProperty("replyTo") ActorRef<ArtifactReadByUser> replyTo, @JsonProperty("artifactId") Long artifactId, @JsonProperty("userId") String userId) implements ArtifactQuery {}
 
-        @JsonCreator
-        public IsArtifactReadByUser(@JsonProperty("replyTo") ActorRef<ArtifactReadByUser> replyTo, @JsonProperty("artifactId") Long artifactId, @JsonProperty("userId") String userId) {
-            this.replyTo = replyTo;
-            this.artifactId = artifactId;
-            this.userId = userId;
-        }
-    }
+    public static record IsArtifactInUserFeed(@JsonProperty("replyTo") ActorRef<ArtifactInUserFeed> replyTo, @JsonProperty("artifactId") Long artifactId, @JsonProperty("userId") String userId) implements ArtifactQuery {}
 
-    public static class IsArtifactInUserFeed implements ArtifactQuery {
-        public final ActorRef<ArtifactInUserFeed> replyTo;
-        public final Long artifactId;
-        public final String userId;
-
-        @JsonCreator
-        public IsArtifactInUserFeed(@JsonProperty("replyTo") ActorRef<ArtifactInUserFeed> replyTo, @JsonProperty("artifactId") Long artifactId, @JsonProperty("userId") String userId) {
-            this.replyTo = replyTo;
-            this.artifactId = artifactId;
-            this.userId = userId;
-        }
-    }
-
-    public static class GetAllStates implements ArtifactQuery {
-        public final ActorRef<AllStates> replyTo;
-        public final Long artifactId;
-        public final String userId;
-
-        @JsonCreator
-        public GetAllStates(@JsonProperty("replyTo") ActorRef<AllStates> replyTo, @JsonProperty("artifactId") Long artifactId, @JsonProperty("userId") String userId) {
-            this.replyTo = replyTo;
-            this.artifactId = artifactId;
-            this.userId = userId;
-        }
-    }
+    public static record GetAllStates(@JsonProperty("replyTo") ActorRef<AllStates> replyTo, @JsonProperty("artifactId") Long artifactId, @JsonProperty("userId") String userId) implements ArtifactQuery {}
 
     // commands
-    public static class SetArtifactRead implements ArtifactCommand {
-        public final ActorRef<Okay> replyTo;
-        public final Long artifactId;
-        public final String userId;
+    public static record SetArtifactRead(@JsonProperty("replyTo") ActorRef<Okay> replyTo, @JsonProperty("artifactId") Long artifactId, @JsonProperty("userId") String userId) implements ArtifactCommand {}
 
-        @JsonCreator
-        public SetArtifactRead(@JsonProperty("replyTo") ActorRef<Okay> replyTo, @JsonProperty("artifactId") Long artifactId, @JsonProperty("userId") String userId) {
-            this.replyTo = replyTo;
-            this.artifactId = artifactId;
-            this.userId = userId;
-        }
-    }
+    public static record SetArtifactAddedToUserFeed(@JsonProperty("replyTo") ActorRef<Okay> replyTo, @JsonProperty("artifactId") Long artifactId, @JsonProperty("userId") String userId) implements ArtifactCommand {}
 
-    public static class SetArtifactAddedToUserFeed implements ArtifactCommand {
-        public final ActorRef<Okay> replyTo;
-        public final Long artifactId;
-        public final String userId;
-
-        @JsonCreator
-        public SetArtifactAddedToUserFeed(@JsonProperty("replyTo") ActorRef<Okay> replyTo, @JsonProperty("artifactId") Long artifactId, @JsonProperty("userId") String userId) {
-            this.replyTo = replyTo;
-            this.artifactId = artifactId;
-            this.userId = userId;
-        }
-    }
-
-    public static class SetArtifactRemovedFromUserFeed implements ArtifactCommand {
-        public final ActorRef<Okay> replyTo;
-        public final Long artifactId;
-        public final String userId;
-
-        @JsonCreator
-        public SetArtifactRemovedFromUserFeed(@JsonProperty("replyTo") ActorRef<Okay> replyTo, @JsonProperty("artifactId") Long artifactId, @JsonProperty("userId") String userId) {
-            this.replyTo = replyTo;
-            this.artifactId = artifactId;
-            this.userId = userId;
-        }
-    }
+    public static record SetArtifactRemovedFromUserFeed(@JsonProperty("replyTo") ActorRef<Okay> replyTo, @JsonProperty("artifactId") Long artifactId, @JsonProperty("userId") String userId) implements ArtifactCommand {}
 
     // responses
     @JsonSerialize
-    public static class Okay implements ArtifactResponse {}
+    public static record Okay() implements ArtifactResponse {}
 
-    public static class ArtifactReadByUser implements ArtifactResponse {
-        public final Boolean artifactRead;
+    public static record ArtifactReadByUser(@JsonProperty("artifactRead")  Boolean artifactRead) implements ArtifactResponse {}
 
-        @JsonCreator
-        public ArtifactReadByUser(@JsonProperty("artifactRead")  Boolean artifactRead) {
-            this.artifactRead = artifactRead;
-        }
-    }
+    public static record ArtifactInUserFeed(@JsonProperty("artifactRead") Boolean artifactInUserFeed) implements ArtifactResponse {}
 
-    public static class ArtifactInUserFeed implements ArtifactResponse {
-        public final Boolean artifactInUserFeed;
-
-        @JsonCreator
-        public ArtifactInUserFeed(@JsonProperty("artifactRead") Boolean artifactInUserFeed) {
-            this.artifactInUserFeed = artifactInUserFeed;
-        }
-    }
-
-    public static class AllStates implements ArtifactResponse {
-        public final Boolean artifactRead;
-        public final Boolean artifactInUserFeed;
-
-        @JsonCreator
-        public AllStates(@JsonProperty("artifactRead") Boolean artifactRead, @JsonProperty("artifactInUserFeed") Boolean artifactInUserFeed) {
-            this.artifactRead = artifactRead;
-            this.artifactInUserFeed = artifactInUserFeed;
-        }
-    }
+    public static record AllStates(@JsonProperty("artifactRead") Boolean artifactRead, @JsonProperty("artifactInUserFeed") Boolean artifactInUserFeed) implements ArtifactResponse {}
 
     // events
-    public static class ArtifactEvent implements EventSerializeMarker {}
+    public static interface ArtifactEvent extends EventSerializeMarker {}
     @JsonSerialize
-    public static class ArtifactRead extends ArtifactEvent {}
+    public static record ArtifactRead() implements ArtifactEvent {}
     @JsonSerialize
-    public static class ArtifactAddedToUserFeed extends ArtifactEvent {}
+    public static record ArtifactAddedToUserFeed() implements ArtifactEvent {}
     @JsonSerialize
-    public static class ArtifactRemovedFromUserFeed extends ArtifactEvent {}
+    public static record ArtifactRemovedFromUserFeed() implements ArtifactEvent {}
 
-    public static class CurrState implements MsgSerializeMarker {
-        Boolean artifactRead;
-        Boolean artifactInUserFeed;
-
-        CurrState(Boolean artifactRead, Boolean artifactInUserFeed) {
-            this.artifactRead = artifactRead;
-            this.artifactInUserFeed = artifactInUserFeed;
-        }
-    }
+    public static record CurrState(Boolean artifactRead, Boolean artifactInUserFeed) implements MsgSerializeMarker {}
 
     public static Behavior<ArtifactCommand> create(String entityId) {
         return Behaviors.setup(context -> new ArtifactStateEntityActor(entityId));

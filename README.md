@@ -9,14 +9,22 @@ In this four part blog series, we walk you through a working Proof of Concept (P
 - [Part 4](https://www.lightbend.com/blog/how-to-distribute-application-state-with-akka-cluster-part-4-the-source-code) - Source Code: In our final installment, we do a deep dive into our Scala source code.
  	
 ----------------
-## Update Feb 15, 2022
-- This repository is the Java version of the original Scala version found [here](https://github.com/michael-read/akka-typed-distributed-state-blog).
-- Testing [Lightbend's Akka Persistence Plugin for R2DBC](https://github.com/akka/akka-persistence-r2dbc).
+## Update September 7, 2022
+- update Akka related dependencies to latest
+- Learned that `sbt` uses the env variable `JAVA_OPTS` to pass configs to Java whereas Maven w/ [Fabric8](https://github.com/fabric8io/docker-maven-plugin) uses `JAVA_TOOL_OPTIONS`.
+
+## Update September 1, 2022
+- Moved to Java 17: converted Actor Protocols and Events to Records
+- Akka DNS cluster formation on Docker w/ Yugabyte. Doc [here](DOCKER_DNS_YUGABYTE.md).
 
 ## Update March 23, 2022
 - Complete multi-node testing: integration tests for cluster formation, and gRPC, and http endpoints running under Maven.
 - Upgrade Akka, Akka Http, and Akka gRPC to latest.
 - multi-node testing defaults to Cassandra, but commenting change be changed to use Yugabyte instead.
+
+## Update Feb 15, 2022
+- This repository is the Java version of the original Scala version found [here](https://github.com/michael-read/akka-typed-distributed-state-blog).
+- Testing [Lightbend's Akka Persistence Plugin for R2DBC](https://github.com/akka/akka-persistence-r2dbc).
 
 ## How to Generate Protobuf interfaces and stubs
 ```

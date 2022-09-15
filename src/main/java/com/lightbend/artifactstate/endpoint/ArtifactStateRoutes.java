@@ -38,7 +38,7 @@ public class ArtifactStateRoutes {
                         system.scheduler());
         return result.thenApply(reply -> {
             if (reply != null) {
-                return new ExtResponse(artifactId, userId, reply.artifactRead);
+                return new ExtResponse(artifactId, userId, reply.artifactRead());
             }
             else {
                 return new ExtResponse(artifactId, userId, String.format("Artifact query not found for artifactId %d, userId %s", artifactId, userId));
@@ -56,7 +56,7 @@ public class ArtifactStateRoutes {
                         system.scheduler());
         return result.thenApply(reply -> {
             if (reply != null)
-                return new ExtResponse(artifactId, userId, reply.artifactInUserFeed);
+                return new ExtResponse(artifactId, userId, reply.artifactInUserFeed());
             else
                 return new ExtResponse(artifactId, userId, String.format("Artifact query not found for artifactId %d, userId %s", artifactId, userId));
         }).exceptionally(throwable -> new ExtResponse(artifactId, userId, String.format("Artifact query failed for artifactId %d, userId %s : %s", artifactId, userId, throwable.getMessage())));
@@ -72,7 +72,7 @@ public class ArtifactStateRoutes {
                         system.scheduler());
         return result.thenApply(reply -> {
             if (reply != null)
-                return new AllStatesResponse(artifactId, userId, reply.artifactRead, reply.artifactInUserFeed);
+                return new AllStatesResponse(artifactId, userId, reply.artifactRead(), reply.artifactInUserFeed());
             else {
                 return new AllStatesResponse(artifactId, userId, String.format("Artifact query not found for artifactId %d, userId %s", artifactId, userId));
             }

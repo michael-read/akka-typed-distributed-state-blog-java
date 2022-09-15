@@ -31,11 +31,14 @@ import akka.actor.typed.ActorRef;
 import akka.actor.typed.ActorSystem;
 import akka.actor.typed.Behavior;
 import akka.actor.typed.javadsl.Behaviors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.concurrent.CompletionStage;
 
 public class StartNode {
+    private final Logger log = LoggerFactory.getLogger(StartNode.class);
 
     private static final Config appConfig = ConfigFactory.load();
 
@@ -61,7 +64,7 @@ public class StartNode {
                 Cluster cluster = Cluster.get(context.getSystem());
                 context.getLog().info(String.format("starting node with roles: %s", cluster.selfMember().getRoles()));
 
-                if (cluster.selfMember().hasRole("k8s")) {
+                if (cluster.selfMember().hasRole("k8s") || cluster.selfMember().hasRole("dns")) {
                     AkkaManagement.get(context.getSystem()).start();
                     ClusterBootstrap.get(context.getSystem()).start();
                 }
@@ -80,7 +83,7 @@ context.getLog().info("bootstrapping endpoint...");
 
                         Route routes = new ArtifactStateRoutes(context.getSystem(), psCommandActor).psRoutes();
                         int httpPort = context.getSystem().settings().config().getInt("akka.http.server.default-http-port");
-                        String intf = (cluster.selfMember().hasRole("docker") || cluster.selfMember().hasRole("K8s")) ? "0.0.0.0" : "localhost";
+                        String intf = (cluster.selfMember().hasRole("docker") || cluster.selfMember().hasRole("K8s") || cluster.selfMember().hasRole("dns")) ? "0.0.0.0" : "localhost";
 context.getLog().info(String.format("starting endpoint on interface %s:%d", intf, httpPort));
 
                         Function<HttpRequest, CompletionStage<HttpResponse>> grpcService =
@@ -95,13 +98,13 @@ context.getLog().info(String.format("starting endpoint on interface %s:%d", intf
                         // Both HTTP and gRPC Binding
                         CompletionStage<ServerBinding> binding = Http.get(context.getSystem()).newServerAt(intf, httpPort).bind(route);
 
-                        // Note: use System.out.printf to see the result of the binding
+                        // Note: use the actorsystem's global logger because the context is gone by the time this happens.
                         binding.thenApply(boundTo -> {
-                            System.out.printf("HTTP / gRPC Server online at ip %s:%d\n", boundTo.localAddress(), httpPort);
+                            context.getSystem().log().info(String.format("HTTP / gRPC Server online at ip %s\n", boundTo.localAddress()));
                             return null;
                         }).exceptionally(ex -> {
-                            System.out.printf("HTTP Server binding failed at %s:%d\n", intf, httpPort);
-                            System.out.printf("exception:%s", ex.getMessage());
+                            context.getSystem().log().error(String.format("HTTP Server binding failed at %s:%d\n", intf, httpPort));
+                            context.getSystem().log().error(String.format("exception:%s", ex.getMessage(), ex));
                             ex.printStackTrace();
                             return null;
                         });
