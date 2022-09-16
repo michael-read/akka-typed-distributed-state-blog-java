@@ -51,6 +51,8 @@ spec:
           value: "akka.persistence.r2dbc.query"
         - name: JAVA_OPTS
           value: "-Dconfig.resource=cluster-application-k8s-multi-dc.conf"
+        - name: JAVA_TOOL_OPTIONS
+          value: "-Dconfig.resource=cluster-application-k8s-multi-dc.conf"
         ports:
         # akka remoting
         - name: remoting
