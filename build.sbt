@@ -84,6 +84,7 @@ def ossDependencies : Seq[ModuleID] = {
     "com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test,
     "com.typesafe.akka" %% "akka-stream-testkit" % akkaVersion % Test,
     "com.typesafe.akka" %% "akka-actor-testkit-typed" % akkaVersion % Test,
+    "junit" % "junit" % "4.13.1" % Test,
 
     "commons-io" % "commons-io" % "2.4" % Test,
     "org.scalatest" %% "scalatest" % "3.0.8" % Test

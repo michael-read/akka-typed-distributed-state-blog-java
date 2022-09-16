@@ -34,18 +34,15 @@ import scala.jdk.CollectionConverters;
 
 import java.net.InetSocketAddress;
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.*;
 
-public class MultiNodeIntegrationTest {
-    private static final Logger logger = LoggerFactory.getLogger(MultiNodeIntegrationTest.class);
+public class MultiDCNodeIntegrationTest {
+    private static final Logger logger = LoggerFactory.getLogger(MultiDCNodeIntegrationTest.class);
 
     private static Config sharedConfig() {
         return ConfigFactory.load("multinode-test.conf");
@@ -56,63 +53,62 @@ public class MultiNodeIntegrationTest {
                 "akka.cluster {"
                         + "\n"
                         + "roles=[\"sharded\", \"k8s\"]"
-                        + "\n"
-                        + "}"
-                        + "\n"
+                + "\n"
+                + "}"
+                + "\n"
         ).withFallback(persistenceConfig());
     }
 
     /*
     Using Cassandra with Akka Persistence by default. If you want to use Yugabyte instead, please see configuration below.
      */
-    private static Config persistenceConfig() {
+/*    private static Config persistenceConfig() {
         return ConfigFactory.parseString(
                 "akka.persistence {"
-                        + "\n"
-                        + "journal.plugin = \"akka.persistence.cassandra.journal\""
-                        + "\n"
-                        + "snapshot-store.plugin = \"akka.persistence.cassandra.snapshot\""
-                        + "\n"
-                        + "}"
-                        + "\n"
+                    + "\n"
+                    + "journal.plugin = \"akka.persistence.cassandra.journal\""
+                    + "\n"
+                    + "snapshot-store.plugin = \"akka.persistence.cassandra.snapshot\""
+                    + "\n"
+                + "}"
+                + "\n"
 //              # NOTE: autocreation of journal and snapshot should not be used in production
-                        + "akka.persistence.cassandra {"
-                        + "\n"
-                        + "journal {"
-                        + "\n"
-                        + "keyspace-autocreate = true"
-                        + "\n"
-                        + "tables-autocreate = true"
-                        + "\n"
-                        + "}"
-                        + "\n"
-                        + "snapshot {"
+                + "akka.persistence.cassandra {"
+                    + "\n"
+                    + "journal {"
                         + "\n"
                         + "keyspace-autocreate = true"
                         + "\n"
                         + "tables-autocreate = true"
                         + "\n"
-                        + "}"
+                    + "}"
+                    + "\n"
+                    + "snapshot {"
                         + "\n"
-                        + "}"
+                        + "keyspace-autocreate = true"
                         + "\n"
-                        + "datastax-java-driver {"
+                        + "tables-autocreate = true"
                         + "\n"
-                        + "advanced.reconnect-on-init = true"
-                        + "\n"
-                        + "basic.contact-points = [\"127.0.0.1:9042\"]"
-                        + "\n"
-                        + "basic.load-balancing-policy.local-datacenter = \"datacenter1\""
-                        + "\n"
-                        + "}"
-                        + "\n"
+                    + "}"
+                + "\n"
+                + "}"
+                + "\n"
+                + "datastax-java-driver {"
+                    + "\n"
+                    + "advanced.reconnect-on-init = true"
+                    + "\n"
+                    + "basic.contact-points = [\"127.0.0.1:9042\"]"
+                    + "\n"
+                    + "basic.load-balancing-policy.local-datacenter = \"datacenter1\""
+                    + "\n"
+                + "}"
+                + "\n"
         );
-    }
+    }*/
 
     /*
     Yugabyte R2DBC Persistence driver. Comment out Cassandra above, and uncomment the following to use Yugabyte.
      */
-/*
     private static Config persistenceConfig() {
         return ConfigFactory.parseString(
             "akka.persistence {\n"
@@ -133,20 +129,19 @@ public class MultiNodeIntegrationTest {
             + "}\n"
         );
     }
-*/
 
     private static Config endpointContig(int grcpPort) {
         return ConfigFactory.parseString(
-                "akka.http.server.default-http-port="
-                        + grcpPort
-                        + "\n"
-                        + "akka.http.server.preview.enable-http2 = on"
-                        + "\n"
-                        + "akka.cluster {"
-                        + "\n"
-                        + "roles=[\"endpoint\", \"k8s\"]"
-                        + "\n"
-                        + "}"
+        "akka.http.server.default-http-port="
+            + grcpPort
+            + "\n"
+            + "akka.http.server.preview.enable-http2 = on"
+            + "\n"
+            + "akka.cluster {"
+                    + "\n"
+                    + "roles=[\"endpoint\", \"k8s\"]"
+            + "\n"
+            + "}"
         );
     }
 
@@ -164,9 +159,11 @@ public class MultiNodeIntegrationTest {
                         + "  { host = \"127.0.0.1\", port = "
                         + managementPorts.get(1)
                         + "},\n"
+/*
                         + "  { host = \"127.0.0.1\", port = "
-                        + managementPorts.get(2)
+                        + managementDC1Ports.get(2)
                         + "},\n"
+*/
                         + "]"
         );
     }
@@ -177,45 +174,14 @@ public class MultiNodeIntegrationTest {
                         + "\"" + thisDC + "\"\n"
         );
     }
-
+    
     private static TestNodeFixture testNode1;
     private static TestNodeFixture testNode2;
-    private static TestEndpointFixture endpointNode3;
+    private static TestEndpointFixture endpointNode1;
+    private static TestEndpointFixture endpointNode2;
     private static final Duration requestTimeout = Duration.ofSeconds(10);
 
-    @BeforeClass
-    public static void setup() {
-        logger.info("setup started...");
-
-        // grab six temporary ports
-        List<InetSocketAddress> inetSocketAddresses =
-                CollectionConverters.SeqHasAsJava(
-                                SocketUtil.temporaryServerAddresses(6, "127.0.0.1", false))
-                        .asJava();
-
-        // setup unique management ports
-        List<Integer> managementPorts =
-                inetSocketAddresses.subList(3, 6).stream()
-                        .map(InetSocketAddress::getPort)
-                        .collect(Collectors.toList());
-
-        logger.info("management ports:" + managementPorts);
-
-        ReplicaId replicaId1 = new ReplicaId("DC1");
-        testNode1 = new TestNodeFixture(managementPorts, 0, replicaId1.id());
-        testNode2 = new TestNodeFixture(managementPorts, 1, replicaId1.id());
-        endpointNode3 = new TestEndpointFixture(8082, managementPorts, 2, replicaId1.id());
-        List<ActorSystem<?>> systems = Arrays.asList(testNode1.system, testNode2.system, endpointNode3.system);
-
-        Set<ReplicaId> allDCs = new HashSet<ReplicaId>(Arrays.asList(replicaId1));
-        String queryPluginId = "akka.persistence.r2dbc.query";
-
-        testNode1.testKit.spawn(StartNode.rootBehavior(replicaId1, allDCs, queryPluginId));
-        testNode2.testKit.spawn(StartNode.rootBehavior(replicaId1, allDCs, queryPluginId));
-        endpointNode3.testKit.spawn(StartNode.rootBehavior(replicaId1, allDCs, queryPluginId));
-
-        // wait for all nodes to have joined the cluster, become up and see all other nodes as up
-        TestProbe<Object> upProbe = testNode1.testKit.createTestProbe();
+    private static void waitOnClusterFormation(List<ActorSystem<?>> systems, TestProbe<Object> upProbe) {
         systems.forEach(
                 system -> {
                     upProbe.awaitAssert(
@@ -231,15 +197,66 @@ public class MultiNodeIntegrationTest {
                                 return null;
                             });
                 });
+    }
+
+    @BeforeClass
+    public static void setup() {
+        logger.info("setup started...");
+
+        // grab seven temporary ports
+        List<InetSocketAddress> inetSocketAddresses =
+                CollectionConverters.SeqHasAsJava(
+                                SocketUtil.temporaryServerAddresses(7, "127.0.0.1", false))
+                        .asJava();
+
+        // setup unique management ports
+        List<Integer> managementDC1Ports =
+                inetSocketAddresses.subList(2, 4).stream()
+                        .map(InetSocketAddress::getPort)
+                        .collect(Collectors.toList());
+        List<Integer> managementDC2Ports =
+                inetSocketAddresses.subList(4, 6).stream()
+                        .map(InetSocketAddress::getPort)
+                        .collect(Collectors.toList());
+
+        logger.info("managementDC1Ports:" + managementDC1Ports);
+        logger.info("managementDC2Ports:" + managementDC2Ports);
+
+        testNode1 = new TestNodeFixture(managementDC1Ports, 0, "DC1");
+        testNode2 = new TestNodeFixture(managementDC2Ports, 0, "DC2");
+        endpointNode1 = new TestEndpointFixture(8082, managementDC1Ports, 1, "DC1");
+        endpointNode2 = new TestEndpointFixture(8083, managementDC2Ports, 1, "DC2");
+
+        List<ActorSystem<?>> cluster1 = Arrays.asList(testNode1.system, endpointNode1.system);
+        List<ActorSystem<?>> cluster2 = Arrays.asList(testNode2.system, endpointNode2.system);
+
+        ReplicaId replicaId1 = new ReplicaId("DC1");
+        ReplicaId replicaId2 = new ReplicaId("DC2");
+        Set<ReplicaId> allDCs = new HashSet<ReplicaId>(Arrays.asList(replicaId1, replicaId2));
+        String queryPluginId = "akka.persistence.r2dbc.query";
+
+        // Form two separate clusters with node / endpoint
+        testNode1.testKit.spawn(StartNode.rootBehavior(replicaId1, allDCs, queryPluginId));
+        endpointNode1.testKit.spawn(StartNode.rootBehavior(replicaId1, allDCs, queryPluginId));
+
+        testNode2.testKit.spawn(StartNode.rootBehavior(replicaId2, allDCs, queryPluginId));
+        endpointNode2.testKit.spawn(StartNode.rootBehavior(replicaId2, allDCs, queryPluginId));
+
+        // wait for all nodes to have joined the cluster, become up and see all other nodes as up
+        TestProbe<Object> upProbe1 = testNode1.testKit.createTestProbe();
+        waitOnClusterFormation(cluster1, upProbe1);
+        TestProbe<Object> upProbe2 = testNode2.testKit.createTestProbe();
+        waitOnClusterFormation(cluster2, upProbe2);
         logger.info("setup completed...");
     }
 
     @AfterClass
     public static void tearDown() {
         logger.info("tearDown started...");
-        endpointNode3.testKit.shutdownTestKit();
-        testNode2.testKit.shutdownTestKit();
-        testNode1.testKit.shutdownTestKit();
+        if (endpointNode2 != null) endpointNode2.testKit.shutdownTestKit();
+        if (endpointNode1 != null) endpointNode1.testKit.shutdownTestKit();
+        if (testNode2 != null) testNode2.testKit.shutdownTestKit();
+        if (testNode1 != null) testNode1.testKit.shutdownTestKit();
         logger.info("tearDown completed...");
     }
 
@@ -306,7 +323,7 @@ public class MultiNodeIntegrationTest {
 
         // setArtifactReadByUser
         CompletionStage<CommandResponse> response1 =
-                endpointNode3
+                endpointNode1
                         .getGrpcClient()
                         .setArtifactReadByUser()
                         .invoke(michael1);
@@ -315,7 +332,7 @@ public class MultiNodeIntegrationTest {
 
         // isArtifactReadByUser
         CompletionStage<ExtResponse> response2 =
-                endpointNode3
+                endpointNode1
                         .getGrpcClient()
                         .isArtifactReadByUser()
                         .invoke(michael1);
@@ -324,9 +341,21 @@ public class MultiNodeIntegrationTest {
         assertEquals(extResponse1.getArtifactId(), michael1.getArtifactId());
         assertTrue(extResponse1.getAnswer());
 
+        // isArtifactReadByUser on DC2
+        CompletionStage<ExtResponse> response2DC2 =
+                endpointNode2
+                        .getGrpcClient()
+                        .isArtifactReadByUser()
+                        .invoke(michael1);
+        ExtResponse extResponse1DC2 = response2DC2.toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
+        assertEquals(extResponse1DC2.getUserId(), michael1.getUserId());
+        assertEquals(extResponse1DC2.getArtifactId(), michael1.getArtifactId());
+        assertTrue(extResponse1DC2.getAnswer());
+
+
         // setArtifactAddedToUserFeed
         CompletionStage<CommandResponse> response3 =
-                endpointNode3
+                endpointNode1
                         .getGrpcClient()
                         .setArtifactAddedToUserFeed()
                         .invoke(michael1);
@@ -335,7 +364,7 @@ public class MultiNodeIntegrationTest {
 
         // isArtifactInUserFeed
         CompletionStage<ExtResponse> response4 =
-                endpointNode3
+                endpointNode1
                         .getGrpcClient()
                         .isArtifactInUserFeed()
                         .invoke(michael1);
@@ -346,7 +375,7 @@ public class MultiNodeIntegrationTest {
 
         // setArtifactAddedToUserFeed
         CompletionStage<CommandResponse> response5 =
-                endpointNode3
+                endpointNode1
                         .getGrpcClient()
                         .setArtifactAddedToUserFeed()
                         .invoke(michael1);
@@ -355,7 +384,7 @@ public class MultiNodeIntegrationTest {
 
         // isArtifactInUserFeed
         CompletionStage<ExtResponse> response6 =
-                endpointNode3
+                endpointNode1
                         .getGrpcClient()
                         .isArtifactInUserFeed()
                         .invoke(michael1);
@@ -366,7 +395,7 @@ public class MultiNodeIntegrationTest {
 
         // setArtifactRemovedFromUserFeed
         CompletionStage<CommandResponse> response7 =
-                endpointNode3
+                endpointNode1
                         .getGrpcClient()
                         .setArtifactRemovedFromUserFeed()
                         .invoke(michael1);
@@ -375,7 +404,7 @@ public class MultiNodeIntegrationTest {
 
         // isArtifactInUserFeed
         CompletionStage<ExtResponse> response8 =
-                endpointNode3
+                endpointNode1
                         .getGrpcClient()
                         .isArtifactInUserFeed()
                         .invoke(michael1);
@@ -385,7 +414,7 @@ public class MultiNodeIntegrationTest {
         assertFalse(extResponse4.getAnswer());
 
         CompletionStage<ArtifactStateProto.AllStatesResponse> response9 =
-                endpointNode3
+                endpointNode1
                         .getGrpcClient()
                         .getAllStates()
                         .invoke(michael1);
@@ -408,83 +437,98 @@ public class MultiNodeIntegrationTest {
 
         /// setArtifactReadByUser
         final HttpResponse response1 =
-                Http.get(endpointNode3.system)
+                Http.get(endpointNode1.system)
                         .singleRequest(HttpRequest.POST("http://localhost:8082/artifactState/setArtifactReadByUser")
                                 .withEntity(HttpEntities.create(ContentTypes.APPLICATION_JSON, michael2)))
-                        .toCompletableFuture()
-                        .get(requestTimeout.getSeconds(), SECONDS);
+                .toCompletableFuture()
+                .get(requestTimeout.getSeconds(), SECONDS);
         final ArtifactStatePocAPI.CommandResponse commandResponse1 = Jackson.unmarshaller(ArtifactStatePocAPI.CommandResponse.class)
-                .unmarshal(response1.entity(), endpointNode3.system)
+                .unmarshal(response1.entity(), endpointNode1.system)
                 .toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
 
         assertTrue(commandResponse1.getSuccess());
 
         // isArtifactReadByUser
         final HttpResponse response2 =
-                Http.get(endpointNode3.system)
+                Http.get(endpointNode1.system)
                         .singleRequest(HttpRequest.POST("http://localhost:8082/artifactState/isArtifactReadByUser")
                                 .withEntity(HttpEntities.create(ContentTypes.APPLICATION_JSON, michael2)))
                         .toCompletableFuture()
                         .get(requestTimeout.getSeconds(), SECONDS);
 
         final ArtifactStatePocAPI.ExtResponse extResponse1 = Jackson.unmarshaller(ArtifactStatePocAPI.ExtResponse.class)
-                .unmarshal(response2.entity(), endpointNode3.system)
+                .unmarshal(response2.entity(), endpointNode1.system)
                 .toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
         assertEquals(extResponse1.getArtifactId(), artifactAndUser.getArtifactId());
         assertEquals(extResponse1.getUserId(), artifactAndUser.getUserId());
         assertTrue(extResponse1.getAnswer());
 
+        // isArtifactReadByUser on DC2
+        final HttpResponse response2DC2 =
+                Http.get(endpointNode2.system)
+                        .singleRequest(HttpRequest.POST("http://localhost:8082/artifactState/isArtifactReadByUser")
+                                .withEntity(HttpEntities.create(ContentTypes.APPLICATION_JSON, michael2)))
+                        .toCompletableFuture()
+                        .get(requestTimeout.getSeconds(), SECONDS);
+
+        final ArtifactStatePocAPI.ExtResponse extResponse1DC1 = Jackson.unmarshaller(ArtifactStatePocAPI.ExtResponse.class)
+                .unmarshal(response2DC2.entity(), endpointNode1.system)
+                .toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
+        assertEquals(extResponse1DC1.getArtifactId(), artifactAndUser.getArtifactId());
+        assertEquals(extResponse1DC1.getUserId(), artifactAndUser.getUserId());
+        assertTrue(extResponse1DC1.getAnswer());
+
         // setArtifactAddedToUserFeed
         final HttpResponse response3 =
-                Http.get(endpointNode3.system)
+                Http.get(endpointNode1.system)
                         .singleRequest(HttpRequest.POST("http://localhost:8082/artifactState/setArtifactAddedToUserFeed")
                                 .withEntity(HttpEntities.create(ContentTypes.APPLICATION_JSON, michael2)))
                         .toCompletableFuture()
                         .get(requestTimeout.getSeconds(), SECONDS);
         final ArtifactStatePocAPI.CommandResponse commandResponse2 = Jackson.unmarshaller(ArtifactStatePocAPI.CommandResponse.class)
-                .unmarshal(response3.entity(), endpointNode3.system)
+                .unmarshal(response3.entity(), endpointNode1.system)
                 .toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
 
         assertTrue(commandResponse2.getSuccess());
 
         // isArtifactInUserFeed
         final HttpResponse response4 =
-                Http.get(endpointNode3.system)
+                Http.get(endpointNode1.system)
                         .singleRequest(HttpRequest.POST("http://localhost:8082/artifactState/isArtifactInUserFeed")
                                 .withEntity(HttpEntities.create(ContentTypes.APPLICATION_JSON, michael2)))
                         .toCompletableFuture()
                         .get(requestTimeout.getSeconds(), SECONDS);
 
         final ArtifactStatePocAPI.ExtResponse extResponse2 = Jackson.unmarshaller(ArtifactStatePocAPI.ExtResponse.class)
-                .unmarshal(response4.entity(), endpointNode3.system)
+                .unmarshal(response4.entity(), endpointNode1.system)
                 .toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
         assertSame(extResponse2.getArtifactId(), artifactAndUser.getArtifactId());
         assertEquals(extResponse2.getUserId(), artifactAndUser.getUserId());
         assertTrue(extResponse2.getAnswer());
-
+        
         // setArtifactRemovedFromUserFeed
         final HttpResponse response5 =
-                Http.get(endpointNode3.system)
+                Http.get(endpointNode1.system)
                         .singleRequest(HttpRequest.POST("http://localhost:8082/artifactState/setArtifactRemovedFromUserFeed")
                                 .withEntity(HttpEntities.create(ContentTypes.APPLICATION_JSON, michael2)))
                         .toCompletableFuture()
                         .get(requestTimeout.getSeconds(), SECONDS);
         final ArtifactStatePocAPI.CommandResponse commandResponse3 = Jackson.unmarshaller(ArtifactStatePocAPI.CommandResponse.class)
-                .unmarshal(response5.entity(), endpointNode3.system)
+                .unmarshal(response5.entity(), endpointNode1.system)
                 .toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
 
         assertTrue(commandResponse3.getSuccess());
 
         // getAllStates
         final HttpResponse response6 =
-                Http.get(endpointNode3.system)
+                Http.get(endpointNode1.system)
                         .singleRequest(HttpRequest.POST("http://localhost:8082/artifactState/getAllStates")
                                 .withEntity(HttpEntities.create(ContentTypes.APPLICATION_JSON, michael2)))
                         .toCompletableFuture()
                         .get(requestTimeout.getSeconds(), SECONDS);
 
         final ArtifactStatePocAPI.AllStatesResponse allStatesResponse = Jackson.unmarshaller(ArtifactStatePocAPI.AllStatesResponse.class)
-                .unmarshal(response6.entity(), endpointNode3.system)
+                .unmarshal(response6.entity(), endpointNode1.system)
                 .toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
         assertSame(allStatesResponse.getArtifactId(), artifactAndUser.getArtifactId());
         assertEquals(allStatesResponse.getUserId(), artifactAndUser.getUserId());
@@ -503,51 +547,65 @@ public class MultiNodeIntegrationTest {
 
         /// setArtifactReadByUser
         final HttpResponse response1 =
-                Http.get(endpointNode3.system)
+                Http.get(endpointNode1.system)
                         .singleRequest(HttpRequest.GET("http://localhost:8082/artifactState/setArtifactReadByUser?" + michael3Params))
                         .toCompletableFuture()
                         .get(requestTimeout.getSeconds(), SECONDS);
         final ArtifactStatePocAPI.CommandResponse commandResponse1 = Jackson.unmarshaller(ArtifactStatePocAPI.CommandResponse.class)
-                .unmarshal(response1.entity(), endpointNode3.system)
+                .unmarshal(response1.entity(), endpointNode1.system)
                 .toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
 
         assertTrue(commandResponse1.getSuccess());
 
         // isArtifactReadByUser
         final HttpResponse response2 =
-                Http.get(endpointNode3.system)
+                Http.get(endpointNode1.system)
                         .singleRequest(HttpRequest.GET("http://localhost:8082/artifactState/isArtifactReadByUser?" + michael3Params))
                         .toCompletableFuture()
                         .get(requestTimeout.getSeconds(), SECONDS);
 
         final ArtifactStatePocAPI.ExtResponse extResponse1 = Jackson.unmarshaller(ArtifactStatePocAPI.ExtResponse.class)
-                .unmarshal(response2.entity(), endpointNode3.system)
+                .unmarshal(response2.entity(), endpointNode1.system)
                 .toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
         assertEquals(extResponse1.getArtifactId(), artifactAndUser.getArtifactId());
         assertEquals(extResponse1.getUserId(), artifactAndUser.getUserId());
         assertTrue(extResponse1.getAnswer());
 
+        // isArtifactReadByUser on DC2
+        final HttpResponse response2DC2 =
+                Http.get(endpointNode2.system)
+                        .singleRequest(HttpRequest.GET("http://localhost:8082/artifactState/isArtifactReadByUser?" + michael3Params))
+                        .toCompletableFuture()
+                        .get(requestTimeout.getSeconds(), SECONDS);
+
+        final ArtifactStatePocAPI.ExtResponse extResponse1DC2 = Jackson.unmarshaller(ArtifactStatePocAPI.ExtResponse.class)
+                .unmarshal(response2DC2.entity(), endpointNode2.system)
+                .toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
+        assertEquals(extResponse1DC2.getArtifactId(), artifactAndUser.getArtifactId());
+        assertEquals(extResponse1DC2.getUserId(), artifactAndUser.getUserId());
+        assertTrue(extResponse1DC2.getAnswer());
+
         // setArtifactAddedToUserFeed
         final HttpResponse response3 =
-                Http.get(endpointNode3.system)
+                Http.get(endpointNode1.system)
                         .singleRequest(HttpRequest.GET("http://localhost:8082/artifactState/setArtifactAddedToUserFeed?" + michael3Params))
                         .toCompletableFuture()
                         .get(requestTimeout.getSeconds(), SECONDS);
         final ArtifactStatePocAPI.CommandResponse commandResponse2 = Jackson.unmarshaller(ArtifactStatePocAPI.CommandResponse.class)
-                .unmarshal(response3.entity(), endpointNode3.system)
+                .unmarshal(response3.entity(), endpointNode1.system)
                 .toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
 
         assertTrue(commandResponse2.getSuccess());
 
         // isArtifactInUserFeed
         final HttpResponse response4 =
-                Http.get(endpointNode3.system)
+                Http.get(endpointNode1.system)
                         .singleRequest(HttpRequest.GET("http://localhost:8082/artifactState/isArtifactInUserFeed?" + michael3Params))
                         .toCompletableFuture()
                         .get(requestTimeout.getSeconds(), SECONDS);
 
         final ArtifactStatePocAPI.ExtResponse extResponse2 = Jackson.unmarshaller(ArtifactStatePocAPI.ExtResponse.class)
-                .unmarshal(response4.entity(), endpointNode3.system)
+                .unmarshal(response4.entity(), endpointNode1.system)
                 .toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
         assertSame(extResponse2.getArtifactId(), artifactAndUser.getArtifactId());
         assertEquals(extResponse2.getUserId(), artifactAndUser.getUserId());
@@ -555,25 +613,25 @@ public class MultiNodeIntegrationTest {
 
         // setArtifactRemovedFromUserFeed
         final HttpResponse response5 =
-                Http.get(endpointNode3.system)
+                Http.get(endpointNode1.system)
                         .singleRequest(HttpRequest.GET("http://localhost:8082/artifactState/setArtifactRemovedFromUserFeed?" + michael3Params))
                         .toCompletableFuture()
                         .get(requestTimeout.getSeconds(), SECONDS);
         final ArtifactStatePocAPI.CommandResponse commandResponse3 = Jackson.unmarshaller(ArtifactStatePocAPI.CommandResponse.class)
-                .unmarshal(response5.entity(), endpointNode3.system)
+                .unmarshal(response5.entity(), endpointNode1.system)
                 .toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
 
         assertTrue(commandResponse3.getSuccess());
 
         // getAllStates
         final HttpResponse response6 =
-                Http.get(endpointNode3.system)
+                Http.get(endpointNode1.system)
                         .singleRequest(HttpRequest.GET("http://localhost:8082/artifactState/getAllStates?" + michael3Params))
                         .toCompletableFuture()
                         .get(requestTimeout.getSeconds(), SECONDS);
 
         final ArtifactStatePocAPI.AllStatesResponse allStatesResponse = Jackson.unmarshaller(ArtifactStatePocAPI.AllStatesResponse.class)
-                .unmarshal(response6.entity(), endpointNode3.system)
+                .unmarshal(response6.entity(), endpointNode1.system)
                 .toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
         assertSame(allStatesResponse.getArtifactId(), artifactAndUser.getArtifactId());
         assertEquals(allStatesResponse.getUserId(), artifactAndUser.getUserId());
