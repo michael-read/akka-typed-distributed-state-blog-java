@@ -2,21 +2,22 @@ package com.lightbend.artifactstate.app;
 
 import akka.Done;
 import akka.NotUsed;
-
+import akka.actor.typed.ActorRef;
+import akka.actor.typed.ActorSystem;
+import akka.actor.typed.Behavior;
+import akka.actor.typed.javadsl.Behaviors;
 import akka.cluster.sharding.typed.ClusterShardingSettings;
-import akka.cluster.sharding.typed.javadsl.Entity;
-import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
 import akka.cluster.sharding.typed.ShardingEnvelope;
 import akka.cluster.sharding.typed.javadsl.ClusterSharding;
+import akka.cluster.sharding.typed.javadsl.Entity;
+import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
+import akka.cluster.typed.Cluster;
 import akka.http.javadsl.Http;
 import akka.http.javadsl.ServerBinding;
 import akka.http.javadsl.model.HttpRequest;
 import akka.http.javadsl.model.HttpResponse;
 import akka.http.javadsl.server.Route;
 import akka.japi.function.Function;
-import static akka.http.javadsl.server.Directives.*;
-
-import akka.cluster.typed.Cluster;
 import akka.management.cluster.bootstrap.ClusterBootstrap;
 import akka.management.javadsl.AkkaManagement;
 import akka.persistence.typed.ReplicaId;
@@ -28,22 +29,16 @@ import com.lightbend.artifactstate.endpoint.GrpcArtifactStateServiceImpl;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
-import akka.actor.typed.ActorRef;
-import akka.actor.typed.ActorSystem;
-import akka.actor.typed.Behavior;
-import akka.actor.typed.javadsl.Behaviors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletionStage;
 
-public class StartNode {
-    private final Logger log = LoggerFactory.getLogger(StartNode.class);
+import static akka.http.javadsl.server.Directives.concat;
+import static akka.http.javadsl.server.Directives.handle;
 
+public class StartNode {
     private static final Config appConfig = ConfigFactory.load();
 
     public static void main(String[] args) {
@@ -102,7 +97,7 @@ context.getLog().info("bootstrapping endpoint...");
 
                         Route routes = new ArtifactStateRoutes(context.getSystem(), psCommandActor).psRoutes();
                         int httpPort = context.getSystem().settings().config().getInt("akka.http.server.default-http-port");
-                        String intf = (cluster.selfMember().hasRole("docker") || cluster.selfMember().hasRole("K8s") || cluster.selfMember().hasRole("dns")) ? "0.0.0.0" : "localhost";
+                        String intf = (cluster.selfMember().hasRole("docker") || cluster.selfMember().hasRole("k8s") || cluster.selfMember().hasRole("dns")) ? "0.0.0.0" : "localhost";
 context.getLog().info(String.format("starting endpoint on interface %s:%d", intf, httpPort));
 
                         Function<HttpRequest, CompletionStage<HttpResponse>> grpcService =
@@ -123,14 +118,14 @@ context.getLog().info(String.format("starting endpoint on interface %s:%d", intf
                             return null;
                         }).exceptionally(ex -> {
                             context.getSystem().log().error(String.format("HTTP Server binding failed at %s:%d\n", intf, httpPort));
-                            context.getSystem().log().error(String.format("exception:%s", ex.getMessage(), ex));
+                            context.getSystem().log().error(String.format("exception:%s", ex.getMessage()), ex);
                             ex.printStackTrace();
                             return null;
                         });
                     }
                 }
             } catch (Exception ex) {
-                context.getLog().error("an exception occurred while bootstrapping node:", ex.getMessage());
+                context.getLog().error("an exception occurred while bootstrapping node: %s", ex.getMessage());
                 ex.printStackTrace();
             }
             return Behaviors.empty();
