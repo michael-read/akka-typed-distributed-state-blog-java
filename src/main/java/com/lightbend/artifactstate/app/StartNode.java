@@ -83,7 +83,7 @@ context.getLog().info("bootstrapping endpoint...");
 
                         Route routes = new ArtifactStateRoutes(context.getSystem(), psCommandActor).psRoutes();
                         int httpPort = context.getSystem().settings().config().getInt("akka.http.server.default-http-port");
-                        String intf = (cluster.selfMember().hasRole("docker") || cluster.selfMember().hasRole("K8s") || cluster.selfMember().hasRole("dns")) ? "0.0.0.0" : "localhost";
+                        String intf = (cluster.selfMember().hasRole("docker") || cluster.selfMember().hasRole("k8s") || cluster.selfMember().hasRole("dns")) ? "0.0.0.0" : "localhost";
 context.getLog().info(String.format("starting endpoint on interface %s:%d", intf, httpPort));
 
                         Function<HttpRequest, CompletionStage<HttpResponse>> grpcService =
