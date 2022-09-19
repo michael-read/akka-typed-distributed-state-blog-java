@@ -54,16 +54,14 @@ public class StartNode {
 
         Set<ReplicaId> dcsConfigs = new HashSet<>();
         if (appConfig.hasPath("clustering.allDataCenters")) {
-            Arrays.stream(appConfig.getString("clustering.allDataCenters").split(",")).map ( dc ->
+            Arrays.stream(appConfig.getString("clustering.allDataCenters").split(",")).forEach ( dc ->
                 dcsConfigs.add(new ReplicaId(dc)));
         }
         String queryPluginId = appConfig.getString("clustering.queryPluginId");
 
         if (appConfig.hasPath("clustering.ports")) {
             List<Integer> clusterPorts = appConfig.getIntList("clustering.ports");
-            clusterPorts.forEach(port -> {
-                startNode(rootBehavior(dataCenter, dcsConfigs, queryPluginId), clusterName);
-            });
+            clusterPorts.forEach(port -> startNode(rootBehavior(dataCenter, dcsConfigs, queryPluginId), clusterName));
         }
         else {
             startNode(rootBehavior(dataCenter, dcsConfigs, queryPluginId), clusterName);
