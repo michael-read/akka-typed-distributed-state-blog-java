@@ -20,6 +20,7 @@ microk8s enable helm3
 microk8s enable rbac
 microk8s enable registry
 microk8s enable hostpath-storage
+microk8s enable ingress
 microk8s enable traefik
 ```
 ## Create microk8s aliases
@@ -49,18 +50,67 @@ k get po -A
 ```
 wget https://downloads.yugabyte.com/releases/2.12.2.0/yugabyte-2.12.2.0-b58-linux-x86_64.tar.gz
 ```
-2. Run Post Install on three VMs
-3. Run the following on one of each of the respective VMs:
+2. Capture the IPs of each vm, and add hostnames to /etc/hosts. For example,
+```
+<ip> dc1-yb.vm
+<ip> dc2-yb.vm
+<ip> dc3-yb.vm
+
+```
+3. Run Post Install on three VMs
+4. Run the following on one of each of the respective VMs:
 ```
 ./bin/yugabyted start --listen=dc1-yb.vm
 ./bin/yugabyted start --listen=dc2-yb.vm --join=dc1-yb.vm
 ./bin/yugabyted start --listen=dc3-yb.vm --join=dc1-yb.vm
 ```
+5. on dc1-yb.vm connect using ysql:
+```
+bin/ysqlsh -h dc1-yb.vm  -U yugabyte -d yugabyte
+```
+6. Copy and paste the schemas from the [Yugabyte] tab from [here](https://doc.akka.io/docs/akka-persistence-r2dbc/current/getting-started.html#creating-the-schema), and paste into ysql.
+
+## Build Docker Image and Push to the Registry
+1. Set the pom.xml to skip tests on line #28:
+```
+        <tests.skip>true</tests.skip>
+```
+2. Build the image to your local Docker registry.
+```
+mvn \
+  clean \
+  package \
+  docker:build
+```
+3. Tag the image, for transfer to dc1.vm, and dc2.vm. For example,
+```
+docker tag <container id> dc1.vm:32000/akka-typed-blog-distributed-state/cluster:1.1.1
+docker tag <container id> dc2.vm:32000/akka-typed-blog-distributed-state/cluster:1.1.1
+```
+4. Push the respective images 
+```
+docker push dc1.vm:32000/akka-typed-blog-distributed-state/cluster:1.1.1
+docker push dc2.vm:32000/akka-typed-blog-distributed-state/cluster:1.1.1
+```
+
+Pushing to this insecure registry may fail in some versions of Docker unless the daemon is explicitly configured to trust this registry. To address this we need to edit /etc/docker/daemon.json and add:
+```
+{
+"insecure-registries" : ["localhost:32000", "dc1.vm:32000", "dc2.vm:32000"]
+}
+```
+The new configuration should be loaded with a Docker daemon restart:
+
+```
+sudo systemctl restart docker
+```
 
 ## On DC (dc1.vm)!
-1. Capture the IP address of dc1-yb, and update the dbs-dc1 endpoint yaml.
+1. Copy the microk8s-multi-dc directory to both dc1.vm via sftp (think FileZilla).
+2. Capture the IP address of dc1-yb, and update the dbs-dc1 endpoint yaml.
 
 ### To install
+From the microk8s-multi-dc directory issue the following:
 ```
 k apply -f dbs-dc1/
 k apply -f nodes-dc1/
@@ -82,9 +132,11 @@ k delete -f endpoints-dc1/
 ```
 
 ## On DC2 (dc2.vm)
-1. Capture the IP address of dc2-yb, and update the dbs-dc2 endpoint yaml
+1. Copy the microk8s-multi-dc directory to both dc2.vm via sftp (think FileZilla).
+2. Capture the IP address of dc2-yb, and update the dbs-dc2 endpoint yaml
 
 ### To install
+From the microk8s-multi-dc directory issue the following:
 ```
 k apply -f dbs-dc2/
 k apply -f nodes-dc2/

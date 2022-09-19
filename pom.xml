@@ -25,7 +25,7 @@
         <scala.binary.version>2.13</scala.binary.version>
         <app.configfile>cluster-application-docker-dns.conf</app.configfile>
         <docker.maven.plugin.version>0.40.2</docker.maven.plugin.version>
-        <tests.skip>false</tests.skip>
+        <tests.skip>true</tests.skip>
     </properties>
 
     <repositories>
@@ -120,6 +120,11 @@
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-discovery_${scala.binary.version}</artifactId>
             <version>${akka.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.lightbend.akka.discovery</groupId>
+            <artifactId>akka-discovery-kubernetes-api_${scala.binary.version}</artifactId>
+            <version>${akka.management.version}</version>
         </dependency>
         <dependency>
             <groupId>com.typesafe.akka</groupId>
