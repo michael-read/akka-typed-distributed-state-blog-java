@@ -10,7 +10,7 @@ In this four part blog series, we walk you through a working Proof of Concept (P
  	
 ----------------
 ## Update September 19, 2022
-- created a new branch (mread-multi-dc-common-journal), which supports Akka's Replicated Event Sourcing "Common Journal" running on Multi-Data Center / Microk8s and Yugabyte. README.md can be found [here](./microk8s-multi-dc/README.md).
+- created a new branch (mread-multi-dc-common-journal), which supports Akka's Replicated Event Sourcing "Common Journal" running on Multi-Data Center / Microk8s and Yugabyte. README.md can be found [here](https://github.com/michael-read/akka-typed-distributed-state-blog-java/blob/mread-multi-dc-common-journal/microk8s-multi-dc/README.md).
 
 ## Update September 7, 2022
 - update Akka related dependencies to latest
