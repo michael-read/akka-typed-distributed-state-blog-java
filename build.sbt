@@ -1,20 +1,20 @@
 import com.lightbend.cinnamon.sbt.Cinnamon.CinnamonKeys.cinnamon
 import com.typesafe.sbt.SbtMultiJvm.multiJvmSettings
 import com.typesafe.sbt.SbtMultiJvm.MultiJvmKeys.MultiJvm
-
-lazy val akkaHttpVersion = "10.2.10"
-lazy val akkaVersion     = "2.6.20"
+lazy val akkaHttpVersion = "10.4.0"
+lazy val akkaVersion     = "2.7.0"
 lazy val logbackVersion  = "1.2.3"
-lazy val akkaManagementVersion = "1.1.4"
-lazy val akkaCassandraVersion  = "1.0.5"
-lazy val jacksonVersion  = "3.6.6"
+lazy val akkaManagementVersion = "1.2.0"
+lazy val akkaCassandraVersion  = "1.1.0"
+//lazy val jacksonVersion  = "3.6.6"
+lazy val jacksonVersion  = "4.0.6"
 lazy val akkaEnhancementsVersion = "1.1.16"
-lazy val akkaYugaByteVersion = "0.7.1"
+lazy val akkaPersistenceR2dbcVersion = "1.0.1"
 
 name := "akka-typed-distributed-state-blog-java"
 ThisBuild / version := "1.1.1"
 ThisBuild / organization := "com.lightbend"
-ThisBuild / scalaVersion := "2.13.6"
+ThisBuild / scalaVersion := "2.13.10"
 ThisBuild / scalacOptions += "-deprecation"
 
 // we're relying on the new credential file format for lightbend.sbt as described
@@ -63,7 +63,7 @@ def ossDependencies : Seq[ModuleID] = {
     "com.typesafe.akka" %% "akka-cluster-sharding-typed" % akkaVersion,
     "com.typesafe.akka" %% "akka-persistence-typed" % akkaVersion,
     "com.typesafe.akka" %% "akka-persistence-cassandra" % akkaCassandraVersion,
-    "com.lightbend.akka" %% "akka-persistence-r2dbc" % akkaYugaByteVersion,
+    "com.lightbend.akka" %% "akka-persistence-r2dbc" % akkaPersistenceR2dbcVersion,
     "com.typesafe.akka" %% "akka-multi-node-testkit" % akkaVersion,
     "com.typesafe.akka" %% "akka-persistence-query" % akkaVersion,
     "com.typesafe.akka" %% "akka-serialization-jackson" % akkaVersion,

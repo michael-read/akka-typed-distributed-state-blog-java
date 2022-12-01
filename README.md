@@ -9,6 +9,9 @@ In this four part blog series, we walk you through a working Proof of Concept (P
 - [Part 4](https://www.lightbend.com/blog/how-to-distribute-application-state-with-akka-cluster-part-4-the-source-code) - Source Code: In our final installment, we do a deep dive into our Scala source code.
  	
 ----------------
+## Update November 21, 2022
+- Migrate to the new Akka Platform 22-10, and specifically Akka 2.7, which bring a change to Akka's licensing. Lightbend moved the Akka license from Apache to [Business Source License](https://github.com/akka/akka/blob/main/LICENSE) (BSL) 1.1.
+
 ## Update September 19, 2022
 - created a new branch (mread-multi-dc-common-journal), which supports Akka's Replicated Event Sourcing "Common Journal" running on Multi-Data Center / Microk8s and Yugabyte. README.md can be found [here](https://github.com/michael-read/akka-typed-distributed-state-blog-java/blob/mread-multi-dc-common-journal/microk8s-multi-dc/README.md).
 
