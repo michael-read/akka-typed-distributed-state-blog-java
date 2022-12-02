@@ -1,7 +1,7 @@
 [
   {
     "targets": [
-      "akka-typed-distributed-state-blog-java_cluster_1:9001", "akka-typed-distributed-state-blog-java_cluster_2:9001", "akka-typed-distributed-state-blog-java_cluster_3:9001", "akka-typed-distributed-state-blog-java_endpoint_1:9001"
+      "akka-typed-distributed-state-blog-java_cluster_1:9001", "akka-typed-distributed-state-blog-java_cluster_2:9001", "akka-typed-distributed-state-blog-java_cluster_3:9001", "akka-typed-distributed-state-blog-java_endpoint_1:9001", "otelcol:8888"
     ],
     "labels": {
       "job": "cinnamon"

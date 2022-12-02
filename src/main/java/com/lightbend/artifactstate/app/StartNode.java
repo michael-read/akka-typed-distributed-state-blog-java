@@ -58,6 +58,7 @@ public class StartNode {
 //    public static Behavior<NotUsed> rootBehavior(int port, int defaultPort) {
     public static Behavior<NotUsed> rootBehavior() {
         return Behaviors.setup(context -> {
+            context.getLog().info(String.format("akka discovery %s", context.getSystem().settings().config().getConfig("akka.discovery").toString()));
             try {
                 EntityTypeKey<ArtifactCommand> typeKey = EntityTypeKey.create(ArtifactCommand.class, ArtifactStateEntityActor.ARTIFACTSTATESHARDNAME);
 

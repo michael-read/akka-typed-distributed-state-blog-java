@@ -16,15 +16,28 @@ public class OpenTracingToOTelTracerFactory implements TracerFactory {
 
     private final Config config;
     private final Logger log;
+    private final boolean openTelemetryShimEnabled;
     private final boolean enableGlobalTracer;
 
     public OpenTracingToOTelTracerFactory(String configPath, Config config, LoggingProvider logging) {
-        this.log = logging.get(this.getClass());
         this.config = Configuration.getConfig(config, configPath);
-        this.enableGlobalTracer = this.config.getBoolean("opentracing.opentelemetryshim.enableGlobalTracer");
+        this.log = logging.get(this.getClass());
+        this.openTelemetryShimEnabled = this.config.getBoolean("app.opentracing.opentelemetryshim.enabled");
+        this.enableGlobalTracer = this.config.getBoolean("app.opentracing.opentelemetryshim.enableGlobalTracer");
+    }
+
+    public OpenTracingToOTelTracerFactory(Config config, LoggingProvider logging) {
+        this.config = config;
+        this.log = logging.get(this.getClass());
+        this.openTelemetryShimEnabled = this.config.getBoolean("app.opentracing.opentelemetryshim.enabled");
+        this.enableGlobalTracer = this.config.getBoolean("app.opentracing.opentelemetryshim.enableGlobalTracer");
     }
 
     public Tracer create() {
+        if (!openTelemetryShimEnabled) {
+            log.info("returning io.opentracing.noop.NoopTracerFactory.create()");
+            return io.opentracing.noop.NoopTracerFactory.create();
+        }
         try {
             Tracer tracer = OpenTracingShim.createTracerShim();
             if (enableGlobalTracer) {

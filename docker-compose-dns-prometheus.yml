@@ -57,9 +57,9 @@ services:
       replicas: 3
     environment:
       # for images built with sbt
-      JAVA_OPTS: "-Dconfig.resource=cluster-application-docker-dns-prometheus.conf"
+      JAVA_OPTS: "-Dconfig.resource=cluster-application-docker-dns-tracing.conf"
       # for images built with Maven
-      JAVA_TOOL_OPTIONS: "-Dconfig.resource=cluster-application-docker-dns-prometheus.conf"
+      JAVA_TOOL_OPTIONS: "-Dconfig.resource=cluster-application-docker-dns-tracing.conf"
       CLUSTER_IP: cluster
       DB_HOST: yb-tserver
       CINNAMON_ELASTIC_HOSTS: elasticsearch:9200
@@ -116,6 +116,43 @@ services:
       - "sandbox"
     depends_on:
       - "prometheus"
+
+  # Jaeger
+  jaeger:
+    image: jaegertracing/all-in-one
+    container_name: jaeger
+    command: ["--memory.max-traces", "10000", "--query.base-path", "/jaeger/ui"]
+    deploy:
+      resources:
+        limits:
+          memory: 275M
+    restart: always
+    ports:
+      - "16686"               # Jaeger UI
+      - "4317"                # OTLP gRPC default port
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+
+  # OpenTelemetry Collector
+  otelcol:
+    image: otel/opentelemetry-collector-contrib:0.61.0
+    container_name: otel-col
+    deploy:
+      resources:
+        limits:
+          memory: 100M
+    restart: always
+    command: [ "--config=/etc/otelcol-config.yml", "--config=/etc/otelcol-config-extras.yml" ]
+    volumes:
+      - ./telemetry/otelcol-config.yml:/etc/otelcol-config.yml
+      - ./telemetry/otelcol-config-extras.yml:/etc/otelcol-config-extras.yml
+    ports:
+      - "4317"          # OTLP over gRPC receiver
+      - "4318:4318"     # OTLP over HTTP receiver
+      - "9464"          # Prometheus exporter
+      - "8888"          # metrics endpoint
+    depends_on:
+      - jaeger
 
 networks:
   sandbox:

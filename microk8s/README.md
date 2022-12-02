@@ -56,7 +56,7 @@ For more information other options, [please see the API Definition](https://doc.
 ## Deployment
 1. deploy Cassandra using the yamls in ./K8s/cassandra
 ```
-k apply -f ../k8s/cassandra
+k apply -f ../K8s/cassandra
 ```
 2. build to local docker:
 ```
