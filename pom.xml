@@ -26,6 +26,7 @@
         <app.configfile>cluster-application-docker-dns.conf</app.configfile>
         <docker.maven.plugin.version>0.40.2</docker.maven.plugin.version>
         <tests.skip>true</tests.skip>
+        <opentel.shim.version>1.20.1-alpha</opentel.shim.version>
     </properties>
 
     <repositories>
@@ -54,6 +55,13 @@
                 <groupId>com.typesafe.akka</groupId>
                 <artifactId>akka-http-bom_${scala.binary.version}</artifactId>
                 <version>${akka.http.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-bom-alpha</artifactId>
+                <version>${opentel.shim.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -203,6 +211,16 @@
             <artifactId>cinnamon-prometheus-httpserver</artifactId>
             <version>${cinnamon.version}</version>
         </dependency>
+        <!-- Telemetry OpenTracing to OpenTelemetry -->
+        <dependency>
+            <groupId>com.lightbend.cinnamon</groupId>
+            <artifactId>cinnamon-opentracing_${scala.binary.version}</artifactId>
+            <version>${cinnamon.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-opentracing-shim</artifactId>
+        </dependency>
 
         <!-- Test Scope -->
         <dependency>
@@ -223,6 +241,7 @@
             <version>2.4</version>
             <scope>test</scope>
         </dependency>-->
+
 
     </dependencies>
 
