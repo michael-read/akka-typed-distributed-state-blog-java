@@ -16,12 +16,13 @@
         <akka.http.version>10.4.0</akka.http.version>
         <akka.management.version>1.2.0</akka.management.version>
         <akka.grpc.version>2.2.0</akka.grpc.version>
+        <akka.r2dbc.version>1.0.1</akka.r2dbc.version>
         <grpc.version>1.43.2</grpc.version>
         <project.encoding>UTF-8</project.encoding>
         <!-- Declare Cinnamon version -->
         <cinnamon.version>2.17.1</cinnamon.version>
         <!-- The Scala versions -->
-        <scala.version>2.13.8</scala.version>
+        <scala.version>2.13.10</scala.version>
         <scala.binary.version>2.13</scala.binary.version>
         <app.configfile>cluster-application-docker-dns.conf</app.configfile>
         <docker.maven.plugin.version>0.40.2</docker.maven.plugin.version>
@@ -80,7 +81,7 @@
         <dependency>
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-persistence-cassandra_${scala.binary.version}</artifactId>
-            <version>1.0.5</version>
+            <version>1.1.0</version>
         </dependency>
         <dependency>
             <groupId>com.typesafe.akka</groupId>
@@ -149,7 +150,7 @@
         <dependency>
             <groupId>com.lightbend.akka</groupId>
             <artifactId>akka-persistence-r2dbc_${scala.binary.version}</artifactId>
-            <version>0.5.0</version>
+            <version>${akka.r2dbc.version}</version>
         </dependency>
 
         <!-- Add Lightbend Telemetry (Cinnamon) dependencies -->
@@ -214,7 +215,7 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.13.1</version>
+            <version>4.13.2</version>
             <scope>test</scope>
         </dependency>
 <!--        <dependency>
@@ -231,7 +232,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.22.0</version>
+                <version>2.22.1</version>
                 <configuration>
                     <skipTests>${tests.skip}</skipTests>
                 </configuration>
