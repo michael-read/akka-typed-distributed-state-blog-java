@@ -18,7 +18,7 @@ spec:
       serviceAccountName: nodes-sa
       containers:
       - name: node
-        image: localhost:32000/akka-typed-blog-distributed-state/cluster:0.1.3
+        image: localhost:32000/akka-typed-blog-distributed-state/cluster:1.1.7
         #health
         readinessProbe:
           httpGet:
@@ -42,6 +42,8 @@ spec:
         - name: CASSANDRA_CONTACT_POINT1
           value: "cassandra-db:9042"
         - name: JAVA_OPTS
+          value: "-Dconfig.resource=cluster-application-k8s.conf"
+        - name: JAVA_TOOL_OPTIONS
           value: "-Dconfig.resource=cluster-application-k8s.conf"
         ports:
         # akka remoting
