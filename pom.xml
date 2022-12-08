@@ -6,7 +6,7 @@
 
     <groupId>com.lightbend</groupId>
     <artifactId>akka-typed-distributed-state-blog-java</artifactId>
-    <version>1.1.5</version>
+    <version>1.1.9</version>
     <packaging>jar</packaging>
 
     <properties>
