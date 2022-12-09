@@ -26,11 +26,15 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testcontainers.containers.DockerComposeContainer;
 import scala.jdk.CollectionConverters;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.Arrays;
@@ -42,6 +46,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.*;
 
 public class MultiNodeIntegrationTest {
+
     private static final Logger logger = LoggerFactory.getLogger(MultiNodeIntegrationTest.class);
 
     private static Config sharedConfig() {
@@ -60,56 +65,8 @@ public class MultiNodeIntegrationTest {
     }
 
     /*
-    Using Cassandra with Akka Persistence by default. If you want to use Yugabyte instead, please see configuration below.
+    Postgres R2DBC Persistence driver. Comment out Cassandra above, and uncomment the following to use Postgres.
      */
-    private static Config persistenceConfig() {
-        return ConfigFactory.parseString(
-                "akka.persistence {"
-                    + "\n"
-                    + "journal.plugin = \"akka.persistence.cassandra.journal\""
-                    + "\n"
-                    + "snapshot-store.plugin = \"akka.persistence.cassandra.snapshot\""
-                    + "\n"
-                + "}"
-                + "\n"
-//              # NOTE: autocreation of journal and snapshot should not be used in production
-                + "akka.persistence.cassandra {"
-                    + "\n"
-                    + "journal {"
-                        + "\n"
-                        + "keyspace-autocreate = true"
-                        + "\n"
-                        + "tables-autocreate = true"
-                        + "\n"
-                    + "}"
-                    + "\n"
-                    + "snapshot {"
-                        + "\n"
-                        + "keyspace-autocreate = true"
-                        + "\n"
-                        + "tables-autocreate = true"
-                        + "\n"
-                    + "}"
-                + "\n"
-                + "}"
-                + "\n"
-                + "datastax-java-driver {"
-                    + "\n"
-                    + "advanced.reconnect-on-init = true"
-                    + "\n"
-                    + "basic.contact-points = [\"127.0.0.1:9042\"]"
-                    + "\n"
-                    + "basic.load-balancing-policy.local-datacenter = \"datacenter1\""
-                    + "\n"
-                + "}"
-                + "\n"
-        );
-    }
-
-    /*
-    Yugabyte R2DBC Persistence driver. Comment out Cassandra above, and uncomment the following to use Yugabyte.
-     */
-/*
     private static Config persistenceConfig() {
         return ConfigFactory.parseString(
             "akka.persistence {\n"
@@ -117,20 +74,19 @@ public class MultiNodeIntegrationTest {
                 + "snapshot-store.plugin = \"akka.persistence.r2dbc.snapshot\"\n"
                 + "state.plugin = \"akka.persistence.r2dbc.durable-state-store\"\n"
                 + "r2dbc {\n"
-                    + "dialect = \"yugabyte\"\n"
+                    + "dialect = \"postgres\"\n"
                     + "connection-factory {\n"
                         + "driver = \"postgres\"\n"
-                        + "host = \"127.0.0.1\"\n"
-                        + "port = 5433\n"
-                        + "database = \"yugabyte\"\n"
-                        + "user = \"yugabyte\"\n"
-                        + "password = \"yugabyte\"\n"
+                        + "host = \"0.0.0.0\"\n"
+//                        + "port = 5432\n"
+                        + "database = \"postgres\"\n"
+                        + "user = \"postgres\"\n"
+                        + "password = \"postgres\"\n"
                     + "}\n"
                 + "}\n"
             + "}\n"
         );
     }
-*/
 
     private static Config endpointContig(int grcpPort) {
         return ConfigFactory.parseString(
@@ -173,8 +129,15 @@ public class MultiNodeIntegrationTest {
     private static TestEndpointFixture endpointNode3;
     private static final Duration requestTimeout = Duration.ofSeconds(10);
 
+    @ClassRule
+    public static DockerComposeContainer environment =
+            new DockerComposeContainer(new File("./docker-compose-postgres.yml"))
+                    .withExposedService("postgres-db", 5432)
+                    .withLocalCompose(true);
+
+
     @BeforeClass
-    public static void setup() {
+    public static void setup() throws IOException, InterruptedException {
         logger.info("setup started...");
 
         // grab six temporary ports
