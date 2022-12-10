@@ -27,7 +27,7 @@
         <app.configfile>cluster-application-docker-dns.conf</app.configfile>
         <docker.maven.plugin.version>0.40.2</docker.maven.plugin.version>
         <testcontainers.version>1.17.6</testcontainers.version>
-        <tests.skip>false</tests.skip>
+        <tests.skip>true</tests.skip>
     </properties>
 
     <repositories>
