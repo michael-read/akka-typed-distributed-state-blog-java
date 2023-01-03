@@ -30,6 +30,7 @@ services:
     shm_size: '512mb'
     volumes:
       - yb-tserver-data-1:/mnt/tserver
+      - ./ddl-scripts/create_tables_yugabyte.sql:/docker-entrypoint-initdb.d/10-init.sql-
     command: [ "/home/yugabyte/bin/yb-tserver",
                "--fs_data_dirs=/mnt/tserver",
                "--start_pgsql_proxy",
@@ -55,6 +56,8 @@ services:
     image: akka-typed-blog-distributed-state/cluster:1.1.1
     deploy:
       replicas: 3
+    depends_on:
+      - jaeger
     environment:
       # for images built with sbt
       JAVA_OPTS: "-Dconfig.resource=cluster-application-docker-dns-tracing.conf"
@@ -63,6 +66,7 @@ services:
       CLUSTER_IP: cluster
       DB_HOST: yb-tserver
       CINNAMON_ELASTIC_HOSTS: elasticsearch:9200
+      JAEGER-HOST: jaeger
     networks:
       - sandbox
 
@@ -74,6 +78,7 @@ services:
       - cluster
     depends_on:
       - cluster
+      - jaeger
     environment:
       # for images built with sbt
       JAVA_OPTS: "-Dconfig.resource=endpoint-application-docker-dns-prometheus.conf"
@@ -81,6 +86,7 @@ services:
       JAVA_TOOL_OPTIONS: "-Dconfig.resource=endpoint-application-docker-dns-prometheus.conf"
       CLUSTER_IP: endpoint
       CINNAMON_ELASTIC_HOSTS: elasticsearch:9200
+      JAEGER-HOST: jaeger
     ports:
       - "8082:8082"
       - "8558:8558"
@@ -106,7 +112,6 @@ services:
     networks:
       - sandbox
 
-
   grafana:
     image: grafana/grafana:6.0.2
     volumes: ["./telemetry/cinnamon-prometheus-app:/var/lib/grafana/plugins/cinnamon-prometheus-app"]
@@ -117,9 +122,10 @@ services:
     depends_on:
       - "prometheus"
 
+
   # Jaeger
   jaeger:
-    image: jaegertracing/all-in-one
+    image: jaegertracing/all-in-one:1.40
     container_name: jaeger
     command: ["--memory.max-traces", "10000", "--query.base-path", "/jaeger/ui"]
     deploy:
@@ -128,10 +134,15 @@ services:
           memory: 275M
     restart: always
     ports:
-      - "16686"               # Jaeger UI
-      - "4317"                # OTLP gRPC default port
+      - "16686:16686"   # Jaeger UI
+      - "4317:4317"     # OTLP gRPC default port
+#      - "6831:6831/udp"     # accept jaeger.thrift over Thrift-compact protocol (used by most SDKs)
+#      - "6832:6832/udp"     # accept jaeger.thrift over Thrift-binary protocol (used by Node.js SDK)
+#      - "5775:5775/udp"     # (deprecated) accept zipkin.thrift over compact Thrift protocol (used by legacy clients only)
     environment:
       - COLLECTOR_OTLP_ENABLED=true
+    networks:
+      - sandbox
 
   # OpenTelemetry Collector
   otelcol:
@@ -153,6 +164,8 @@ services:
       - "8888"          # metrics endpoint
     depends_on:
       - jaeger
+    networks:
+      - sandbox
 
 networks:
   sandbox:
