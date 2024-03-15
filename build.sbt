@@ -1,21 +1,22 @@
 import com.lightbend.cinnamon.sbt.Cinnamon.CinnamonKeys.cinnamon
-import com.typesafe.sbt.SbtMultiJvm.multiJvmSettings
-import com.typesafe.sbt.SbtMultiJvm.MultiJvmKeys.MultiJvm
-lazy val akkaHttpVersion = "10.4.0"
-lazy val akkaVersion     = "2.7.0"
-lazy val logbackVersion  = "1.2.3"
-lazy val akkaManagementVersion = "1.2.0"
-lazy val akkaCassandraVersion  = "1.1.0"
+
+lazy val akkaVersion     = "2.9.2"
+lazy val akkaHttpVersion = "10.6.1"
+lazy val logbackVersion  = "1.2.13"
+lazy val akkaManagementVersion = "1.5.1"
+lazy val akkaCassandraVersion  = "1.2.0"
 //lazy val jacksonVersion  = "3.6.6"
 lazy val jacksonVersion  = "4.0.6"
-lazy val akkaEnhancementsVersion = "1.1.16"
-lazy val akkaPersistenceR2dbcVersion = "1.0.1"
+lazy val akkaDiagnosticsVersion = "2.1.0"
+lazy val akkaPersistenceR2dbcVersion = "1.2.3"
 
 name := "akka-typed-distributed-state-blog-java"
 ThisBuild / version := "1.1.1"
 ThisBuild / organization := "com.lightbend"
 ThisBuild / scalaVersion := "2.13.10"
 ThisBuild / scalacOptions += "-deprecation"
+
+resolvers += "Akka library repository".at("https://repo.akka.io/maven")
 
 // we're relying on the new credential file format for lightbend.sbt as described
 //  here -> https://www.lightbend.com/account/lightbend-platform/credentials, which
@@ -44,7 +45,7 @@ def commercialDependencies : Seq[ModuleID] = {
     Cinnamon.library.cinnamonPrometheus,
     Cinnamon.library.cinnamonPrometheusHttpServer,
     Cinnamon.library.jmxImporter,
-    "com.lightbend.akka" %% "akka-diagnostics" % akkaEnhancementsVersion,
+    "com.lightbend.akka" %% "akka-diagnostics" % akkaDiagnosticsVersion,
     // END: this requires a commercial Lightbend Subscription
   )
 }
@@ -54,7 +55,6 @@ def ossDependencies : Seq[ModuleID] = {
     "com.typesafe.akka" %% "akka-remote" % akkaVersion,
     "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion,
     "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
-    "com.typesafe.akka" %% "akka-http2-support" % akkaHttpVersion,
     "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion,
     "com.typesafe.akka" %% "akka-http-jackson" % akkaHttpVersion,
     "com.typesafe.akka" %% "akka-http-xml" % akkaHttpVersion,
@@ -72,9 +72,10 @@ def ossDependencies : Seq[ModuleID] = {
     "com.lightbend.akka.discovery" %% "akka-discovery-kubernetes-api" % akkaManagementVersion,
     "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % akkaManagementVersion,
     "com.lightbend.akka.management" %% "akka-management-cluster-http" % akkaManagementVersion,
+/*
     "org.json4s" %% "json4s-jackson" % jacksonVersion,
     "org.json4s" %% "json4s-core" % jacksonVersion,
-
+*/
     //Logback
     "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
     "ch.qos.logback" % "logback-classic" % logbackVersion,
@@ -85,7 +86,7 @@ def ossDependencies : Seq[ModuleID] = {
     "com.typesafe.akka" %% "akka-stream-testkit" % akkaVersion % Test,
     "com.typesafe.akka" %% "akka-actor-testkit-typed" % akkaVersion % Test,
 
-    "commons-io" % "commons-io" % "2.4" % Test,
+    "commons-io" % "commons-io" % "2.9.0" % Test,
     "org.scalatest" %% "scalatest" % "3.0.8" % Test
   )
 }
@@ -94,9 +95,7 @@ lazy val root = (project in file("."))
   .enablePlugins(DockerPlugin)
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(if (doesCredentialExist.booleanValue()) Cinnamon else Plugins.empty) // NOTE: Cinnamon requires a commercial Lightbend Subscription
-  .enablePlugins(MultiJvmPlugin).configs(MultiJvm)
   .enablePlugins(AkkaGrpcPlugin)
-  .settings(multiJvmSettings: _*)
   .settings(
     akkaGrpcGeneratedLanguages := Seq(AkkaGrpc.Java),
     Docker / packageName := "akka-typed-blog-distributed-state/cluster",

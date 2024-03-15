@@ -12,15 +12,17 @@
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
-        <akka.version>2.7.0</akka.version>
-        <akka.http.version>10.4.0</akka.http.version>
-        <akka.management.version>1.2.0</akka.management.version>
-        <akka.grpc.version>2.2.0</akka.grpc.version>
-        <akka.r2dbc.version>1.0.1</akka.r2dbc.version>
-        <grpc.version>1.43.2</grpc.version>
+        <akka.version>2.9.2</akka.version>
+        <akka.http.version>10.6.1</akka.http.version>
+        <akka.management.version>1.5.1</akka.management.version>
+        <akka.grpc.version>2.4.1</akka.grpc.version>
+        <akka.r2dbc.version>1.2.3</akka.r2dbc.version>
+        <akka.cassandra.version>1.2.0</akka.cassandra.version>
+        <grpc.version>1.60.2</grpc.version>
+        <logbackVersion>1.2.13</logbackVersion>
         <project.encoding>UTF-8</project.encoding>
         <!-- Declare Cinnamon version -->
-        <cinnamon.version>2.17.1</cinnamon.version>
+        <cinnamon.version>2.19.3</cinnamon.version>
         <!-- The Scala versions -->
         <scala.version>2.13.10</scala.version>
         <scala.binary.version>2.13</scala.binary.version>
@@ -31,6 +33,11 @@
 
     <repositories>
         <repository>
+            <id>akka-repository</id>
+            <name>Akka library repository</name>
+            <url>https://repo.akka.io/maven</url>
+        </repository>
+        <repository>
             <id>lightbend-commercial</id>
             <name>Lightbend Commercial</name>
             <!--
@@ -38,9 +45,18 @@
 
                 export LIGHTBEND_COMMERCIAL_URL="https://repo.lightbend.com/pass/<your-password-token>/commercial-releases"
             -->
+            <!--suppress UnresolvedMavenProperty -->
             <url>${env.LIGHTBEND_COMMERCIAL_URL}</url>
         </repository>
     </repositories>
+
+    <pluginRepositories>
+        <pluginRepository>
+            <id>akka-repository</id>
+            <name>Akka library repository</name>
+            <url>https://repo.akka.io/maven</url>
+        </pluginRepository>
+    </pluginRepositories>
 
     <dependencyManagement>
         <dependencies>
@@ -81,7 +97,7 @@
         <dependency>
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-persistence-cassandra_${scala.binary.version}</artifactId>
-            <version>1.1.0</version>
+            <version>${akka.cassandra.version}</version>
         </dependency>
         <dependency>
             <groupId>com.typesafe.akka</groupId>
@@ -148,7 +164,7 @@
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.2.3</version>
+            <version>${logbackVersion}</version>
         </dependency>
 
         <!-- This is dependency to use for Akka Persistence with Yugabyte  -->
