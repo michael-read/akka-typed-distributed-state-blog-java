@@ -1,4 +1,4 @@
-version: '3'
+
 services:
   cassandra-db:
     hostname: cassandra-1
@@ -10,72 +10,55 @@ services:
       - "7199:7199"
       - "9042:9042"
       - "9160:9160"
-#    volumes:
-#    - ./data/cassandra-1:/var/lib/cassandra:rw
+    #    volumes:
+    #    - ./data/cassandra-1:/var/lib/cassandra:rw
     networks:
-    - statepoc
+      - statepoc
     healthcheck:
       test: ["CMD", "cqlsh", "-u cassandra", "-p cassandra" ,"-e describe keyspaces"]
       interval: 15s
       timeout: 10s
       retries: 10
 
-  seed:
-    image: akka-typed-blog-distributed-state/cluster:0.1.3
-    links:
-    - cassandra-db
-    depends_on:
-    - cassandra-db
-    expose:
-    - 1600
-    environment:
-      JAVA_OPTS: "-Dconfig.resource=cluster-application-docker.conf"
-      CLUSTER_IP: seed
-      CLUSTER_PORT: 1600
-      SEED_PORT_1600_TCP_ADDR: seed
-      CASSANDRA_CONTACT_POINT1: cassandra-db:9042
-      CINNAMON_ELASTIC_HOSTS: elasticsearch:9200
-    networks:
-    - cinnamon-elasticsearch-docker-sandbox-2160_sandbox
-    - statepoc
-
   cluster:
-    image: akka-typed-blog-distributed-state/cluster:0.1.3
+    image: akka-typed-blog-distributed-state-java/cluster:1.2.0
+    deploy:
+      replicas: 3
     links:
-    - cassandra-db
-    depends_on:
-    - cassandra-db
+      - cassandra-db
+    #    depends_on:
+    #    - cassandra-db
     environment:
       JAVA_OPTS: "-Dconfig.resource=cluster-application-docker.conf"
+      JAVA_TOOL_OPTIONS: "-Dconfig.resource=cluster-application-docker.conf" ## for builds by Maven
       CLUSTER_IP: cluster
-      CLUSTER_PORT: 0
-      SEED_PORT_1600_TCP_ADDR: seed
       CASSANDRA_CONTACT_POINT1: cassandra-db:9042
-      CINNAMON_ELASTIC_HOSTS: elasticsearch:9200
+      GRAPHITE-SANDBOX: cinnamon-graphite-docker-sandbox-2203-graphite-1
     networks:
-    - cinnamon-elasticsearch-docker-sandbox-2160_sandbox
-    - statepoc
+      - cinnamon-graphite-docker-sandbox-2203_default
+      - statepoc
 
   endpoint:
-    image: akka-typed-blog-distributed-state/cluster:0.1.3
+    image: akka-typed-blog-distributed-state-java/cluster:1.2.0
+    links:
+      - cluster
+    depends_on:
+      - cluster
     environment:
       JAVA_OPTS: "-Dconfig.resource=endpoint-application-docker.conf"
+      JAVA_TOOL_OPTIONS: "-Dconfig.resource=endpoint-application-docker.conf" ## for builds by Maven
       CLUSTER_IP: endpoint
-      CLUSTER_PORT: 0
-      SEED_PORT_1600_TCP_ADDR: seed
-      CINNAMON_ELASTIC_HOSTS: elasticsearch:9200
-    depends_on:
-    - seed
+      GRAPHITE-SANDBOX: cinnamon-graphite-docker-sandbox-2203-graphite-1
     ports:
-    - "8082:8082"
-    - "8558:8558"
+      - "8082:8082"
+      - "8558:8558"
     networks:
-    - cinnamon-elasticsearch-docker-sandbox-2160_sandbox
-    - statepoc
+      - cinnamon-graphite-docker-sandbox-2203_default
+      - statepoc
 
 networks:
   #Note: this network name must match the version of the sandbox
-  cinnamon-elasticsearch-docker-sandbox-2160_sandbox:
+  cinnamon-graphite-docker-sandbox-2203_default:
     external: true
 
   statepoc:

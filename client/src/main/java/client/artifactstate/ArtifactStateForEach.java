@@ -34,11 +34,11 @@ class ArtifactStateForEach {
         CompletionStage<CommandResponse> reply = null;
         switch(command) {
             case "SetArtifactReadByUser":
-                client.setArtifactReadByUser(data);
+                reply = client.setArtifactReadByUser(data);
             case "SetArtifactAddedToUserFeed":
-                client.setArtifactAddedToUserFeed(data);
+                reply = client.setArtifactAddedToUserFeed(data);
             case "SetArtifactRemovedFromUserFeed":
-                client.setArtifactRemovedFromUserFeed(data);
+                reply = client.setArtifactRemovedFromUserFeed(data);
         }
         if (reply != null) {
             reply.thenAccept(msg -> System.out.printf("received response for (%d): Success %b\n", cnt, msg.getSuccess()))

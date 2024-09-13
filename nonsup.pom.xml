@@ -19,8 +19,6 @@
         <akka-diagnostics.version>2.1.1</akka-diagnostics.version>
         <grpc.version>1.63.0</grpc.version>
         <project.encoding>UTF-8</project.encoding>
-        <!-- Declare Cinnamon version -->
-        <cinnamon.version>2.20.3</cinnamon.version>
         <!-- The Scala versions -->
         <scala.version>2.13.14</scala.version>
         <scala.binary.version>2.13</scala.binary.version>
@@ -35,17 +33,6 @@
             <id>akka-repository</id>
             <name>Akka library repository</name>
             <url>https://repo.akka.io/maven</url>
-        </repository>
-        <repository>
-            <id>lightbend-commercial</id>
-            <name>Lightbend Commercial</name>
-            <!--
-                Lightbend Subscription required: You can get your LIGHTBEND_COMMERCIAL_URL from here -> https://www.lightbend.com/account/lightbend-platform/credentials
-
-                export LIGHTBEND_COMMERCIAL_URL="https://repo.lightbend.com/pass/<your-password-token>/commercial-releases"
-            -->
-            <!--suppress UnresolvedMavenProperty -->
-            <url>${env.LIGHTBEND_COMMERCIAL_URL}</url>
         </repository>
     </repositories>
     <pluginRepositories>
@@ -177,71 +164,6 @@
             <version>0.5.0</version>
         </dependency>
 
-        <!-- Add Lightbend Telemetry (Cinnamon) dependencies -->
-        <dependency>
-            <groupId>com.lightbend.cinnamon</groupId>
-            <artifactId>cinnamon-akka_${scala.binary.version}</artifactId>
-            <version>${cinnamon.version}</version>
-        </dependency>
-        <!-- Use Akka HTTP instrumentation -->
-        <dependency>
-            <groupId>com.lightbend.cinnamon</groupId>
-            <artifactId>cinnamon-akka-http_${scala.binary.version}</artifactId>
-            <version>${cinnamon.version}</version>
-        </dependency>
-        <!-- Use Akka gRPC instrumentation -->
-        <dependency>
-            <groupId>com.lightbend.cinnamon</groupId>
-            <artifactId>cinnamon-akka-grpc_${scala.binary.version}</artifactId>
-            <version>${cinnamon.version}</version>
-        </dependency>
-        <!-- Use Akka Persistence instrumentation -->
-        <dependency>
-            <groupId>com.lightbend.cinnamon</groupId>
-            <artifactId>cinnamon-akka-persistence_${scala.binary.version}</artifactId>
-            <version>${cinnamon.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.lightbend.cinnamon</groupId>
-            <artifactId>cinnamon-jvm-metrics-producer</artifactId>
-            <version>${cinnamon.version}</version>
-        </dependency>
-
-        <!-- Use Coda Hale Metrics and Akka instrumentation -->
-        <dependency>
-            <groupId>com.lightbend.cinnamon</groupId>
-            <artifactId>cinnamon-chmetrics</artifactId>
-            <version>${cinnamon.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.lightbend.cinnamon</groupId>
-            <artifactId>cinnamon-chmetrics-statsd-reporter</artifactId>
-            <version>${cinnamon.version}</version>
-        </dependency>
-        <!--
-                <dependency>
-                    <groupId>com.lightbend.cinnamon</groupId>
-                    <artifactId>cinnamon-chmetrics-elasticsearch-reporter</artifactId>
-                    <version>${cinnamon.version}</version>
-                </dependency>
-        -->
-        <dependency>
-            <groupId>com.lightbend.cinnamon</groupId>
-            <artifactId>cinnamon-slf4j-events</artifactId>
-            <version>${cinnamon.version}</version>
-        </dependency>
-        <!-- Prometheus Cinnamon Dependencies -->
-        <dependency>
-            <groupId>com.lightbend.cinnamon</groupId>
-            <artifactId>cinnamon-prometheus</artifactId>
-            <version>${cinnamon.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.lightbend.cinnamon</groupId>
-            <artifactId>cinnamon-prometheus-httpserver</artifactId>
-            <version>${cinnamon.version}</version>
-        </dependency>
-
         <!-- Test Scope -->
         <dependency>
             <groupId>com.typesafe.akka</groupId>
@@ -282,32 +204,6 @@
                     </compilerArgs>
                 </configuration>
             </plugin>
-            <!-- Add plugin to correctly copy Lightbend Telemetry (Cinnamon) agent -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.1.2</version>
-                <executions>
-                    <execution>
-                        <id>copy</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>copy</goal>
-                        </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>com.lightbend.cinnamon</groupId>
-                                    <artifactId>cinnamon-agent</artifactId>
-                                    <version>${cinnamon.version}</version>
-                                    <overWrite>true</overWrite>
-                                    <destFileName>cinnamon-agent.jar</destFileName>
-                                </artifactItem>
-                            </artifactItems>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
@@ -327,9 +223,7 @@
                         <!-- automatically creates the classpath using all project dependencies,
                              also adding the project build directory -->
                         <classpath/>
-                        <argument>-javaagent:${project.build.directory}/dependency/cinnamon-agent.jar</argument>
                         <argument>-Dconfig.resource=${app.configfile}</argument>
-                        <!-- unlike the Telemetry Doc, seem to need to provide the classname here -->
                         <argument>com.lightbend.artifactstate.app.StartNode</argument>
                     </arguments>
                 </configuration>
@@ -360,46 +254,26 @@
                 <artifactId>docker-maven-plugin</artifactId>
                 <version>${docker.maven.plugin.version}</version>
                 <configuration>
-                    <verbose>true</verbose>
-                    <useColor>true</useColor>
                     <images>
                         <image>
                             <name>akka-typed-blog-distributed-state-java/cluster</name>
                             <build>
                                 <from>docker.io/library/eclipse-temurin:21</from>
                                 <tags>
-                                    <tag>${project.version}</tag>
+                                    <tag>latest</tag>
+                                    <tag>${version.number}</tag>
                                 </tags>
                                 <entryPoint>
                                     <exec>
                                         <arg>java</arg>
                                         <arg>-cp</arg>
                                         <arg>/maven/*</arg>
-                                        <!-- /cinnamon-agent folder matches the assembly name below -->
-                                        <arg>-javaagent:/cinnamon-agent/cinnamon-agent.jar</arg>
                                         <arg>com.lightbend.artifactstate.app.StartNode</arg>
                                     </exec>
                                 </entryPoint>
-                                <assemblies>
-                                    <!-- An inline assembly to add the agent jar to the Docker image -->
-                                    <assembly>
-                                        <name>cinnamon-agent</name>
-                                        <mode>dir</mode>
-                                        <inline>
-                                            <includeBaseDirectory>false</includeBaseDirectory>
-                                            <fileSets>
-                                                <fileSet>
-                                                    <directory>${project.build.directory}/dependency</directory>
-                                                    <outputDirectory>.</outputDirectory>
-                                                    <fileMode>0644</fileMode>
-                                                </fileSet>
-                                            </fileSets>
-                                        </inline>
-                                    </assembly>
-                                    <assembly>
-                                        <descriptorRef>artifact-with-dependencies</descriptorRef>
-                                    </assembly>
-                                </assemblies>
+                                <assembly>
+                                    <descriptorRef>artifact-with-dependencies</descriptorRef>
+                                </assembly>
                             </build>
                         </image>
                     </images>

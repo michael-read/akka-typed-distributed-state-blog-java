@@ -9,6 +9,16 @@ In this four part blog series, we walk you through a working Proof of Concept (P
 - [Part 4](https://www.lightbend.com/blog/how-to-distribute-application-state-with-akka-cluster-part-4-the-source-code) - Source Code: In our final installment, we do a deep dive into our Scala source code.
  	
 ----------------
+## Update(s) September, 2024
+- Move to Java 21
+- upgrade all Akka Dependencies to release v24.05.3
+- upgrade Gatling to v3.12.0, and rewrite as Java from Scala
+- fixed bug in Gatling scenario
+- migrate docker-compose & nonsup-docker-compose to use Akka Cluster Bootstrap w/ DNS instead of using Seed nodes for Akka Cluster formation.
+- fixed NPE bug in client/ArtifactStateForEach example.
+- made sure that Maven can properly create docker images with "mvn clean compile package docker:build"
+- created a nonsup.pom.xml for those that don't have a Lightbend Subscription and thus access to commercial options such as Lightbend Telemetry.
+
 ## Update December 6, 2022
 - added missing POM dependency for cluster bootstrap on K8s
 - added JAVA_TOOL_OPTIONS to Microk8s deployments to accommodate difference when passing environment variables with Maven / Fabric8 to the container.
@@ -40,12 +50,12 @@ mvn clean akka-grpc:generate
 
 ## Running a cluster locally with Cassandra
 
-### Start the ElasticSearch Sandbox
-[Elasticsearch developer sandbox](https://developer.lightbend.com/docs/telemetry/current/sandbox/elastic-sandbox.html#elasticsearch-developer-sandbox)
+### Start the Graphite Sandbox
+[Graphite developer sandbox](https://developer.lightbend.com/docs/telemetry/current/sandbox/graphite-sandbox.html)
 
 ### Start Cassandra in Docker
 ````
-docker-compose -f docker-compose-cassandra.yml up
+docker compose -f docker-compose-cassandra.yml up
 ````
 
 ### Start a cluster node
@@ -60,12 +70,12 @@ mvn exec:exec -Dapp.configfile="endpoint-application.conf"
 
 ## Running a cluster locally with Yugabyte
 
-### Start the ElasticSearch Sandbox
-[Elasticsearch developer sandbox](https://developer.lightbend.com/docs/telemetry/current/sandbox/elastic-sandbox.html#elasticsearch-developer-sandbox)
+### Start the Graphite Sandbox
+[Graphite developer sandbox](https://developer.lightbend.com/docs/telemetry/current/sandbox/graphite-sandbox.html)
 
 ### Start Yugabyte in Docker
 ````
-docker-compose -f docker-compose-yugabyte.yml up
+docker compose -f docker compose-yugabyte.yml up
 ````
 
 ### First time, create the tables
