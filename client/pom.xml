@@ -8,15 +8,30 @@
     <packaging>jar</packaging>
 
     <properties>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
-        <akka.version>2.6.18</akka.version>
-        <akka.http.version>10.2.7</akka.http.version>
-        <akka.grpc.version>2.1.3</akka.grpc.version>
-        <grpc.version>1.43.2</grpc.version>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <akka.version>2.9.5</akka.version>
+        <akka.http.version>10.6.3</akka.http.version>
+        <akka.grpc.version>2.4.3</akka.grpc.version>
+        <logback.version>1.2.13</logback.version>
         <scala.binary.version>2.13</scala.binary.version>
         <project.encoding>UTF-8</project.encoding>
     </properties>
+
+    <repositories>
+        <repository>
+            <id>akka-repository</id>
+            <name>Akka library repository</name>
+            <url>https://repo.akka.io/maven</url>
+        </repository>
+    </repositories>
+    <pluginRepositories>
+        <pluginRepository>
+            <id>akka-repository</id>
+            <name>Akka library repository</name>
+            <url>https://repo.akka.io/maven</url>
+        </pluginRepository>
+    </pluginRepositories>
 
     <dependencies>
 
@@ -26,11 +41,13 @@
             <version>${akka.http.version}</version>
         </dependency>
 
+<!--
         <dependency>
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-http2-support_${scala.binary.version}</artifactId>
             <version>${akka.http.version}</version>
         </dependency>
+-->
 
         <dependency>
             <groupId>com.typesafe.akka</groupId>
@@ -65,7 +82,7 @@
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.2.3</version>
+            <version>${logback.version}</version>
         </dependency>
 
         <dependency>
