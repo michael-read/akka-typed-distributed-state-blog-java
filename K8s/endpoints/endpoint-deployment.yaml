@@ -22,7 +22,9 @@ spec:
       containers:
       - env:
         - name: JAVA_OPTS
-          value: "-Dconfig.resource=endpoint-application-k8s.conf"
+          value: "-Dconfig.resource=cluster-application-k8s.conf" # for sbt generated images
+        - name: JAVA_TOOL_OPTIONS
+          value: "-Dconfig.resource=cluster-application-k8s.conf" # for mvn generated images
         image: akka-typed-blog-distributed-state/cluster:1.2.0
         #health
         readinessProbe:
