@@ -42,7 +42,9 @@ spec:
         - name: CASSANDRA_CONTACT_POINT1
           value: "cassandra-db:9042"
         - name: JAVA_OPTS
-          value: "-Dconfig.resource=cluster-application-k8s.conf"
+          value: "-Dconfig.resource=cluster-application-k8s.conf" # for sbt generated images
+        - name: JAVA_TOOL_OPTIONS
+          value: "-Dconfig.resource=cluster-application-k8s.conf" # for mvn generated images
         ports:
         # akka remoting
         - name: remoting
