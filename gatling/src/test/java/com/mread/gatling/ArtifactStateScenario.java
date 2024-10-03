@@ -91,9 +91,9 @@ public class ArtifactStateScenario extends Simulation {
 //                myFirstScenario.injectOpen(constantUsersPerSec(2).during(60))
 //    scn.injectOpen(atOnceUsers(1)
 //    scn.injectOpen(rampUsers(100).during(Duration.ofMinutes(3)))
-//    scn.injectOpen(rampUsers(1000).during(Duration.ofMinutes(5)))
+    scn.injectOpen(rampUsers(1000).during(Duration.ofMinutes(5)))
 // simulation set up -> -> https://docs.gatling.io/reference/script/core/injection/#open-model
-
+/*
             scn.injectOpen(
                     nothingFor(Duration.ofSeconds(4)), // 1
                     atOnceUsers(10), // 2
@@ -104,6 +104,7 @@ public class ArtifactStateScenario extends Simulation {
                     rampUsersPerSec(10).to(20).during(Duration.ofMinutes(10)).randomized(), // 7
                     stressPeakUsers(1000).during(Duration.ofSeconds(20)) // 8
             )
+*/
             .protocols(httpProtocol)
         );
     }
