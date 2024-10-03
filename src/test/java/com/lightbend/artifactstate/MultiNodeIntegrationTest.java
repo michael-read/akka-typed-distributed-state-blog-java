@@ -196,9 +196,14 @@ public class MultiNodeIntegrationTest {
         endpointNode3 = new TestEndpointFixture(8082, managementPorts, 2);
         List<ActorSystem<?>> systems = Arrays.asList(testNode1.system, testNode2.system, endpointNode3.system);
 
-        testNode1.testKit.spawn(StartNode.rootBehavior());
-        testNode2.testKit.spawn(StartNode.rootBehavior());
-        endpointNode3.testKit.spawn(StartNode.rootBehavior());
+        int defaultPort = managementPorts.get(0);
+        int node1Port = defaultPort;
+        int node2Port = managementPorts.get(1);
+        int endpointPort = managementPorts.get(2);
+
+        testNode1.testKit.spawn(StartNode.rootBehavior(defaultPort, defaultPort));
+        testNode2.testKit.spawn(StartNode.rootBehavior(node2Port, defaultPort));
+        endpointNode3.testKit.spawn(StartNode.rootBehavior(endpointPort, defaultPort));
 
         // wait for all nodes to have joined the cluster, become up and see all other nodes as up
         TestProbe<Object> upProbe = testNode1.testKit.createTestProbe();
