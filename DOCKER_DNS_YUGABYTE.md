@@ -25,7 +25,8 @@ Note: I'm finding that cluster formation on Docker isn't 100% reliable. I'm cont
 mvn \
     clean \
     package \
-    docker:build
+    docker:build \
+    -Dmaven.test.skip=true
 ```
 
 #### With sbt

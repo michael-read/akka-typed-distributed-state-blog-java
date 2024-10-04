@@ -21,6 +21,7 @@ import akka.management.cluster.bootstrap.ClusterBootstrap;
 import akka.management.javadsl.AkkaManagement;
 import com.lightbend.artifactstate.actors.ArtifactStateEntityActor;
 import com.lightbend.artifactstate.actors.ArtifactStateEntityActor.ArtifactCommand;
+import com.lightbend.artifactstate.actors.ClusterListenerActor;
 import com.lightbend.artifactstate.endpoint.ArtifactStateRoutes;
 import com.lightbend.artifactstate.endpoint.ArtifactStateServiceHandlerFactory;
 import com.lightbend.artifactstate.endpoint.GrpcArtifactStateServiceImpl;
@@ -44,19 +45,20 @@ public class StartNode {
 
     public static void main(String[] args) {
         String clusterName = appConfig.getString("clustering.cluster.name");
+        int clusterPort = appConfig.getInt("clustering.port");
+        int defaultPort = appConfig.getInt("clustering.defaultPort");
         if (appConfig.hasPath("clustering.ports")) {
             List<Integer> clusterPorts = appConfig.getIntList("clustering.ports");
             clusterPorts.forEach(port -> {
-                startNode(rootBehavior(), clusterName);
+                startNode(rootBehavior(port, defaultPort), clusterName);
             });
         }
         else {
-            startNode(rootBehavior(), clusterName);
+            startNode(rootBehavior(clusterPort, defaultPort), clusterName);
         }
     }
 
-//    public static Behavior<NotUsed> rootBehavior(int port, int defaultPort) {
-    public static Behavior<NotUsed> rootBehavior() {
+    public static Behavior<NotUsed> rootBehavior(int port, int defaultPort) {
         return Behaviors.setup(context -> {
             try {
                 EntityTypeKey<ArtifactCommand> typeKey = EntityTypeKey.create(ArtifactCommand.class, ArtifactStateEntityActor.ARTIFACTSTATESHARDNAME);
@@ -114,6 +116,12 @@ context.getLog().info(String.format("starting endpoint on interface %s:%d", intf
                 context.getLog().error("an exception occurred while bootstrapping node:", ex.getMessage());
                 ex.printStackTrace();
             }
+
+            if (port == defaultPort) {
+                context.spawn(ClusterListenerActor.create(), "clusterListenerActor");
+                context.getSystem().log().info("started clusterListenerActor");
+            }
+
             return Behaviors.empty();
         });
     }

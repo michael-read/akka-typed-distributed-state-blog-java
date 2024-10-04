@@ -8,7 +8,7 @@ import akka.cluster.typed.Subscribe;
 
 public class ClusterListenerActor {
 
-    private static Behavior<ClusterEvent.ClusterDomainEvent> create() {
+    public static Behavior<ClusterEvent.ClusterDomainEvent> create() {
         return Behaviors.setup(context -> {
 
             Cluster cluster = Cluster.get(context.getSystem());

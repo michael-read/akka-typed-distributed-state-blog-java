@@ -10,10 +10,10 @@ services:
       - "7199:7199"
       - "9042:9042"
       - "9160:9160"
-    #    volumes:
-    #    - ./data/cassandra-1:/var/lib/cassandra:rw
+#    volumes:
+#    - ./data/cassandra-1:/var/lib/cassandra:rw
     networks:
-      - statepoc
+    - statepoc
     healthcheck:
       test: ["CMD", "cqlsh", "-u cassandra", "-p cassandra" ,"-e describe keyspaces"]
       interval: 15s
@@ -24,19 +24,21 @@ services:
     image: akka-typed-blog-distributed-state-java/cluster:1.2.0
     deploy:
       replicas: 3
+    ports:
+      - 8558-8567:8558  # akka-mgmt
     links:
-      - cassandra-db
-    #    depends_on:
-    #    - cassandra-db
+    - cassandra-db
+#    depends_on:
+#    - cassandra-db
     environment:
       JAVA_OPTS: "-Dconfig.resource=cluster-application-docker.conf"
-      JAVA_TOOL_OPTIONS: "-Dconfig.resource=cluster-application-docker.conf" ## for builds by Maven
+      JAVA_TOOL_OPTIONS: "-Dconfig.resource=cluster-application-docker.conf"
       CLUSTER_IP: cluster
       CASSANDRA_CONTACT_POINT1: cassandra-db:9042
       GRAPHITE-SANDBOX: cinnamon-graphite-docker-sandbox-2203-graphite-1
     networks:
-      - cinnamon-graphite-docker-sandbox-2203_default
-      - statepoc
+    - cinnamon-graphite-docker-sandbox-2203_default
+    - statepoc
 
   endpoint:
     image: akka-typed-blog-distributed-state-java/cluster:1.2.0
@@ -46,15 +48,14 @@ services:
       - cluster
     environment:
       JAVA_OPTS: "-Dconfig.resource=endpoint-application-docker.conf"
-      JAVA_TOOL_OPTIONS: "-Dconfig.resource=endpoint-application-docker.conf" ## for builds by Maven
+      JAVA_TOOL_OPTIONS: "-Dconfig.resource=endpoint-application-docker.conf"
       CLUSTER_IP: endpoint
       GRAPHITE-SANDBOX: cinnamon-graphite-docker-sandbox-2203-graphite-1
     ports:
-      - "8082:8082"
-      - "8558:8558"
+    - "8082:8082"
     networks:
-      - cinnamon-graphite-docker-sandbox-2203_default
-      - statepoc
+    - cinnamon-graphite-docker-sandbox-2203_default
+    - statepoc
 
 networks:
   #Note: this network name must match the version of the sandbox
