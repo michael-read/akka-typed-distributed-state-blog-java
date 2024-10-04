@@ -50,12 +50,14 @@ public class MultiNodeIntegrationTest {
 
     private static Config nodeConfig() {
         return ConfigFactory.parseString(
-                "akka.cluster {"
-                        + "\n"
-                        + "roles=[\"sharded\", \"k8s\"]"
-                + "\n"
-                + "}"
-                + "\n"
+                """
+                        akka.cluster {\
+                        
+                        roles=["sharded", "k8s"]\
+                        
+                        }\
+                        
+                        """
         ).withFallback(persistenceConfig());
     }
 
@@ -189,7 +191,7 @@ public class MultiNodeIntegrationTest {
                         .map(InetSocketAddress::getPort)
                         .collect(Collectors.toList());
 
-        logger.info("management ports:" + managementPorts);
+        logger.info("management ports:{}", managementPorts);
 
         testNode1 = new TestNodeFixture(managementPorts, 0);
         testNode2 = new TestNodeFixture(managementPorts, 1);
@@ -197,7 +199,6 @@ public class MultiNodeIntegrationTest {
         List<ActorSystem<?>> systems = Arrays.asList(testNode1.system, testNode2.system, endpointNode3.system);
 
         int defaultPort = managementPorts.get(0);
-        int node1Port = defaultPort;
         int node2Port = managementPorts.get(1);
         int endpointPort = managementPorts.get(2);
 
@@ -208,20 +209,18 @@ public class MultiNodeIntegrationTest {
         // wait for all nodes to have joined the cluster, become up and see all other nodes as up
         TestProbe<Object> upProbe = testNode1.testKit.createTestProbe();
         systems.forEach(
-                system -> {
-                    upProbe.awaitAssert(
-                            Duration.ofSeconds(15),
-                            () -> {
-                                Cluster cluster = Cluster.get(system);
-                                assertEquals(MemberStatus.up(), cluster.selfMember().status());
-                                cluster
-                                        .state()
-                                        .getMembers()
-                                        .iterator()
-                                        .forEachRemaining(member -> assertEquals(MemberStatus.up(), member.status()));
-                                return null;
-                            });
-                });
+                system -> upProbe.awaitAssert(
+                        Duration.ofSeconds(15),
+                        () -> {
+                            Cluster cluster = Cluster.get(system);
+                            assertEquals(MemberStatus.up(), cluster.selfMember().status());
+                            cluster
+                                    .state()
+                                    .getMembers()
+                                    .iterator()
+                                    .forEachRemaining(member -> assertEquals(MemberStatus.up(), member.status()));
+                            return null;
+                        }));
         logger.info("setup completed...");
     }
 
@@ -406,7 +405,7 @@ public class MultiNodeIntegrationTest {
                 .unmarshal(response1.entity(), endpointNode3.system)
                 .toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
 
-        assertTrue(commandResponse1.getSuccess());
+        assertTrue(commandResponse1.success());
 
         // isArtifactReadByUser
         final HttpResponse response2 =
@@ -419,9 +418,9 @@ public class MultiNodeIntegrationTest {
         final ArtifactStatePocAPI.ExtResponse extResponse1 = Jackson.unmarshaller(ArtifactStatePocAPI.ExtResponse.class)
                 .unmarshal(response2.entity(), endpointNode3.system)
                 .toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
-        assertEquals(extResponse1.getArtifactId(), artifactAndUser.getArtifactId());
-        assertEquals(extResponse1.getUserId(), artifactAndUser.getUserId());
-        assertTrue(extResponse1.getAnswer());
+        assertEquals(extResponse1.artifactId(), artifactAndUser.artifactId());
+        assertEquals(extResponse1.userId(), artifactAndUser.userId());
+        assertTrue(extResponse1.answer());
 
         // setArtifactAddedToUserFeed
         final HttpResponse response3 =
@@ -434,7 +433,7 @@ public class MultiNodeIntegrationTest {
                 .unmarshal(response3.entity(), endpointNode3.system)
                 .toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
 
-        assertTrue(commandResponse2.getSuccess());
+        assertTrue(commandResponse2.success());
 
         // isArtifactInUserFeed
         final HttpResponse response4 =
@@ -447,9 +446,9 @@ public class MultiNodeIntegrationTest {
         final ArtifactStatePocAPI.ExtResponse extResponse2 = Jackson.unmarshaller(ArtifactStatePocAPI.ExtResponse.class)
                 .unmarshal(response4.entity(), endpointNode3.system)
                 .toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
-        assertSame(extResponse2.getArtifactId(), artifactAndUser.getArtifactId());
-        assertEquals(extResponse2.getUserId(), artifactAndUser.getUserId());
-        assertTrue(extResponse2.getAnswer());
+        assertSame(extResponse2.artifactId(), artifactAndUser.artifactId());
+        assertEquals(extResponse2.userId(), artifactAndUser.userId());
+        assertTrue(extResponse2.answer());
         
         // setArtifactRemovedFromUserFeed
         final HttpResponse response5 =
@@ -462,7 +461,7 @@ public class MultiNodeIntegrationTest {
                 .unmarshal(response5.entity(), endpointNode3.system)
                 .toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
 
-        assertTrue(commandResponse3.getSuccess());
+        assertTrue(commandResponse3.success());
 
         // getAllStates
         final HttpResponse response6 =
@@ -475,10 +474,10 @@ public class MultiNodeIntegrationTest {
         final ArtifactStatePocAPI.AllStatesResponse allStatesResponse = Jackson.unmarshaller(ArtifactStatePocAPI.AllStatesResponse.class)
                 .unmarshal(response6.entity(), endpointNode3.system)
                 .toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
-        assertSame(allStatesResponse.getArtifactId(), artifactAndUser.getArtifactId());
-        assertEquals(allStatesResponse.getUserId(), artifactAndUser.getUserId());
-        assertTrue(allStatesResponse.getArtifactRead());
-        assertFalse(allStatesResponse.getArtifactInUserFeed());
+        assertSame(allStatesResponse.artifactId(), artifactAndUser.artifactId());
+        assertEquals(allStatesResponse.userId(), artifactAndUser.userId());
+        assertTrue(allStatesResponse.artifactRead());
+        assertFalse(allStatesResponse.artifactInUserFeed());
 
         logger.info("testAllViaHttpPOST completed...");
     }
@@ -488,7 +487,7 @@ public class MultiNodeIntegrationTest {
         logger.info("testAllViaHttpGET started...");
 
         final ArtifactStatePocAPI.ArtifactAndUser artifactAndUser = new ArtifactStatePocAPI.ArtifactAndUser(3L, "Michael");
-        final String michael3Params = String.format("artifactId=%d&userId=%s", artifactAndUser.getArtifactId(), artifactAndUser.getUserId());
+        final String michael3Params = String.format("artifactId=%d&userId=%s", artifactAndUser.artifactId(), artifactAndUser.userId());
 
         /// setArtifactReadByUser
         final HttpResponse response1 =
@@ -500,7 +499,7 @@ public class MultiNodeIntegrationTest {
                 .unmarshal(response1.entity(), endpointNode3.system)
                 .toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
 
-        assertTrue(commandResponse1.getSuccess());
+        assertTrue(commandResponse1.success());
 
         // isArtifactReadByUser
         final HttpResponse response2 =
@@ -512,9 +511,9 @@ public class MultiNodeIntegrationTest {
         final ArtifactStatePocAPI.ExtResponse extResponse1 = Jackson.unmarshaller(ArtifactStatePocAPI.ExtResponse.class)
                 .unmarshal(response2.entity(), endpointNode3.system)
                 .toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
-        assertEquals(extResponse1.getArtifactId(), artifactAndUser.getArtifactId());
-        assertEquals(extResponse1.getUserId(), artifactAndUser.getUserId());
-        assertTrue(extResponse1.getAnswer());
+        assertEquals(extResponse1.artifactId(), artifactAndUser.artifactId());
+        assertEquals(extResponse1.userId(), artifactAndUser.userId());
+        assertTrue(extResponse1.answer());
 
         // setArtifactAddedToUserFeed
         final HttpResponse response3 =
@@ -526,7 +525,7 @@ public class MultiNodeIntegrationTest {
                 .unmarshal(response3.entity(), endpointNode3.system)
                 .toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
 
-        assertTrue(commandResponse2.getSuccess());
+        assertTrue(commandResponse2.success());
 
         // isArtifactInUserFeed
         final HttpResponse response4 =
@@ -538,9 +537,9 @@ public class MultiNodeIntegrationTest {
         final ArtifactStatePocAPI.ExtResponse extResponse2 = Jackson.unmarshaller(ArtifactStatePocAPI.ExtResponse.class)
                 .unmarshal(response4.entity(), endpointNode3.system)
                 .toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
-        assertSame(extResponse2.getArtifactId(), artifactAndUser.getArtifactId());
-        assertEquals(extResponse2.getUserId(), artifactAndUser.getUserId());
-        assertTrue(extResponse2.getAnswer());
+        assertSame(extResponse2.artifactId(), artifactAndUser.artifactId());
+        assertEquals(extResponse2.userId(), artifactAndUser.userId());
+        assertTrue(extResponse2.answer());
 
         // setArtifactRemovedFromUserFeed
         final HttpResponse response5 =
@@ -552,7 +551,7 @@ public class MultiNodeIntegrationTest {
                 .unmarshal(response5.entity(), endpointNode3.system)
                 .toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
 
-        assertTrue(commandResponse3.getSuccess());
+        assertTrue(commandResponse3.success());
 
         // getAllStates
         final HttpResponse response6 =
@@ -564,10 +563,10 @@ public class MultiNodeIntegrationTest {
         final ArtifactStatePocAPI.AllStatesResponse allStatesResponse = Jackson.unmarshaller(ArtifactStatePocAPI.AllStatesResponse.class)
                 .unmarshal(response6.entity(), endpointNode3.system)
                 .toCompletableFuture().get(requestTimeout.getSeconds(), SECONDS);
-        assertSame(allStatesResponse.getArtifactId(), artifactAndUser.getArtifactId());
-        assertEquals(allStatesResponse.getUserId(), artifactAndUser.getUserId());
-        assertTrue(allStatesResponse.getArtifactRead());
-        assertFalse(allStatesResponse.getArtifactInUserFeed());
+        assertSame(allStatesResponse.artifactId(), artifactAndUser.artifactId());
+        assertEquals(allStatesResponse.userId(), artifactAndUser.userId());
+        assertTrue(allStatesResponse.artifactRead());
+        assertFalse(allStatesResponse.artifactInUserFeed());
 
         logger.info("testAllViaHttpGET completed...");
     }

@@ -138,7 +138,7 @@ public class ArtifactStateRoutes {
                                         ),
                                         post(() ->
                                                 entity(Jackson.unmarshaller(ArtifactAndUser.class), au -> {
-                                                    CompletionStage<ExtResponse> res = queryArtifactRead(au.getArtifactId(), au.getUserId());
+                                                    CompletionStage<ExtResponse> res = queryArtifactRead(au.artifactId(), au.userId());
                                                     return completeOKWithFuture(res, Jackson.marshaller());
                                                 })
                                         )
@@ -155,7 +155,7 @@ public class ArtifactStateRoutes {
                                         ),
                                         post(() ->
                                                 entity(Jackson.unmarshaller(ArtifactAndUser.class), au -> {
-                                                    CompletionStage<ExtResponse> res = queryArtifactInUserFeed(au.getArtifactId(), au.getUserId());
+                                                    CompletionStage<ExtResponse> res = queryArtifactInUserFeed(au.artifactId(), au.userId());
                                                     return completeOKWithFuture(res, Jackson.marshaller());
                                                 })
                                         )
@@ -172,7 +172,7 @@ public class ArtifactStateRoutes {
                                         ),
                                         post(() ->
                                                 entity(Jackson.unmarshaller(ArtifactAndUser.class), au -> {
-                                                    CompletionStage<AllStatesResponse> res = queryAllStates(au.getArtifactId(), au.getUserId());
+                                                    CompletionStage<AllStatesResponse> res = queryAllStates(au.artifactId(), au.userId());
                                                     return completeOKWithFuture(res, Jackson.marshaller());
                                                 })
                                         )
@@ -191,7 +191,7 @@ public class ArtifactStateRoutes {
                                         ),
                                         post(() ->
                                                 entity(Jackson.unmarshaller(ArtifactAndUser.class), au -> {
-                                                    CompletionStage<CommandResponse> res = cmdArtifactRead(au.getArtifactId(), au.getUserId());
+                                                    CompletionStage<CommandResponse> res = cmdArtifactRead(au.artifactId(), au.userId());
                                                     return completeOKWithFuture(res, Jackson.marshaller());
                                                 })
                                         )
@@ -208,7 +208,7 @@ public class ArtifactStateRoutes {
                                         ),
                                         post(() ->
                                                 entity(Jackson.unmarshaller(ArtifactAndUser.class), au -> {
-                                                    CompletionStage<CommandResponse> res = cmdArtifactAddedToUserFeed(au.getArtifactId(), au.getUserId());
+                                                    CompletionStage<CommandResponse> res = cmdArtifactAddedToUserFeed(au.artifactId(), au.userId());
                                                     return completeOKWithFuture(res, Jackson.marshaller());
                                                 })
                                         )
@@ -225,7 +225,7 @@ public class ArtifactStateRoutes {
                                         ),
                                         post(() ->
                                                 entity(Jackson.unmarshaller(ArtifactAndUser.class), au -> {
-                                                    CompletionStage<CommandResponse> res = cmdArtifactRemovedFromUserFeed(au.getArtifactId(), au.getUserId());
+                                                    CompletionStage<CommandResponse> res = cmdArtifactRemovedFromUserFeed(au.artifactId(), au.userId());
                                                     return completeOKWithFuture(res, Jackson.marshaller());
                                                 })
                                         )
